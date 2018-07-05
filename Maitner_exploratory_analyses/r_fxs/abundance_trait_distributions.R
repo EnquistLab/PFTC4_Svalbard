@@ -18,9 +18,13 @@ abundance_trait_distributions<-function(number_replicates, trait_data, tidy_abun
     
     site<-as.character(unique(tidy_abundance[,2])[i])
     data_i<-tidy_abundance[which(tidy_abundance[,2]==site),]
-    data_i<-data_i[,c("species","value")]
-    data_i<-data_i[which(data_i$value>0),]
+    data_i<-data_i[,c(1,3)]
+    data_i<-data_i[which(data_i[,2]>0),]
+    if(length(which(trait_data$Taxon%in%data_i[,1]))>0){
     traits_i<-trait_distributions(number_replicates = number_replicates,abundance_data = data_i,trait_data = trait_data)
+    
+    
+    
     
     for(t in 1:length(traits_i)){
     trait<-names(traits_i)[t]  
@@ -39,7 +43,7 @@ abundance_trait_distributions<-function(number_replicates, trait_data, tidy_abun
       
     }#t loop
     
-    
+    }#ifthere are traits
     
   }
   

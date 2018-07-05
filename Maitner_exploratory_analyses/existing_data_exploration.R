@@ -87,8 +87,94 @@ summary(lm(goose_moments$mean[which(goose_moments$trait=="ldmc")]~goose_moments$
 summary(lm(goose_moments$mean[which(goose_moments$trait=="sla")]~goose_moments$site[which(goose_moments$trait=="sla")]))
 summary(lm(goose_moments$mean[which(goose_moments$trait=="seed_mass")]~goose_moments$site[which(goose_moments$trait=="seed_mass")]))
 
+full_spp_list<-unique(goose_comm$species)
+
 ########################
 #Alt gradient
+#5 x 5 meter plots along 3 elev gradients
 
-alt_gradient<-read.xlsx("C:/Users/Brian/Dropbox/PFTC4 Svalbard data/Katrin Bochmuhl altitudinal gradients/die drei Gradienten.xls",1)
+alt_gradient_1<-read.xlsx("C:/Users/Brian/Dropbox/PFTC4 Svalbard data/Katrin Bochmuhl altitudinal gradients/die drei Gradienten.xls",1)
+alt_gradient_1<-alt_gradient_1[-c(1,3)]
+alt_gradient_1<-alt_gradient_1[which(!is.na(alt_gradient_1$species)),]
+row.names(alt_gradient_1)<-alt_gradient_1$species
+alt_gradient_1<-funrar::matrix_to_stack(alt_gradient_1[-1])
+alt_gradient_1$site<-"Zeppelinfjellet"
 
+
+alt_gradient_2<-read.xlsx("C:/Users/Brian/Dropbox/PFTC4 Svalbard data/Katrin Bochmuhl altitudinal gradients/die drei Gradienten.xls",5)
+alt_gradient_2<-alt_gradient_2[-c(1,3)]
+alt_gradient_2<-alt_gradient_2[which(!is.na(alt_gradient_2$species)),]
+row.names(alt_gradient_2)<-alt_gradient_2$species
+alt_gradient_2<-funrar::matrix_to_stack(alt_gradient_2[-1])
+alt_gradient_2$site<-"Brentskarhaugen"
+
+alt_gradient_3<-read.xlsx("C:/Users/Brian/Dropbox/PFTC4 Svalbard data/Katrin Bochmuhl altitudinal gradients/die drei Gradienten.xls",8)
+alt_gradient_3<-alt_gradient_3[-c(1,3)]
+alt_gradient_3<-alt_gradient_3[which(!is.na(alt_gradient_3$species)),]
+row.names(alt_gradient_3)<-alt_gradient_3$species
+alt_gradient_3<-funrar::matrix_to_stack(alt_gradient_3[-1])
+alt_gradient_3$site<-"Platafjellet"
+
+
+alt_grad_tidy<-rbind(alt_gradient_1,alt_gradient_2,alt_gradient_3)
+rm(alt_gradient_1,alt_gradient_2,alt_gradient_3)
+colnames(alt_grad_tidy)<-c("elevation","species","abundance","site")
+alt_grad_tidy$elevation<-gsub(pattern = "X",replacement = "",x = alt_grad_tidy$elevation)
+alt_grad_tidy$plot<-paste(alt_grad_tidy$site,"_",alt_grad_tidy$elevation,sep = "")
+alt_grad_tidy$abundance<-as.numeric(as.character(alt_grad_tidy$abundance))
+head(alt_grad_tidy)
+
+alt_grad_tidy$species<-as.character(alt_grad_tidy$species)
+
+alt_grad_sla<-BIEN_trait_mean(species = unique(alt_grad_tidy$species),trait = "leaf area per leaf dry mass")
+alt_grad_seedmass<-BIEN_trait_mean(species = unique(alt_grad_tidy$species),trait = "seed mass")
+alt_grad_ldmc<-BIEN_trait_mean(species = unique(alt_grad_tidy$species),trait = "leaf dry mass per leaf fresh mass")
+
+alt_grad_traits<-alt_grad_ldmc[c('species','mean_value')]
+colnames(alt_grad_traits)[2]<-"ldmc"
+alt_grad_traits<-merge(x = alt_grad_traits,y = alt_grad_sla[c("species","mean_value")],by="species")
+colnames(alt_grad_traits)[3]<-"sla"
+alt_grad_traits<-merge(x = alt_grad_traits,y = alt_grad_seedmass[c("species","mean_value")],by="species")
+colnames(alt_grad_traits)[4]<-"seed_mass"
+alt_grad_traits$ldmc<-as.numeric(as.character(alt_grad_traits$ldmc))
+alt_grad_traits$sla<-as.numeric(as.character(alt_grad_traits$sla))
+alt_grad_traits$seed_mass<-as.numeric(as.character(alt_grad_traits$seed_mass))
+rm(alt_grad_ldmc,alt_grad_seedmass,alt_grad_sla)
+alt_grad_traits[2:4]<-scale(alt_grad_traits[2:4])
+
+
+
+#Inputs:
+#Number of replicated outputs
+# species x site x abundance table (tidy format) (species site abundance)
+# Trait data frame (2 or more columns: first column: species name, columns 2+ : traits)
+
+#Output
+#Matrix with nrows = number of replicates, ncols = total abundance
+alt_trait_dists<-abundance_trait_distributions(number_replicates = 1,trait_data = alt_grad_traits,tidy_abundance = alt_grad_tidy[c("species","plot","abundance")])
+alt_trait_dists$value<-as.numeric(as.character(alt_trait_dists$value))
+alt_trait_dists_moments<-extract_moments(skinny_trait_dist = alt_trait_dists)
+alt_trait_dists_moments$site<-as.character(alt_trait_dists_moments$site)
+alt_trait_dists_moments$elevation<-unlist(lapply(X = alt_trait_dists_moments$site,FUN = function(x){strsplit(x = x,split = "_",fixed = T)[[1]][2]}) )
+alt_trait_dists_moments$plot<-unlist(lapply(X = alt_trait_dists_moments$site,FUN = function(x){strsplit(x = x,split = "_",fixed = T)[[1]][1]}) )
+alt_trait_dists_moments$elevation<-as.numeric(alt_trait_dists_moments$elevation)
+
+ggplot(alt_trait_dists_moments, aes(x=elevation, y=mean)) + 
+  geom_point()+
+  geom_smooth(method=lm, se=FALSE)+facet_wrap(~trait)
+
+summary(lm(alt_trait_dists_moments$mean[which(alt_trait_dists_moments$trait=="ldmc")]~alt_trait_dists_moments$elevation[which(alt_trait_dists_moments$trait=="ldmc")]))
+summary(lm(alt_trait_dists_moments$mean[which(alt_trait_dists_moments$trait=="sla")]~alt_trait_dists_moments$elevation[which(alt_trait_dists_moments$trait=="sla")]))
+summary(lm(alt_trait_dists_moments$mean[which(alt_trait_dists_moments$trait=="seed_mass")]~alt_trait_dists_moments$elevation[which(alt_trait_dists_moments$trait=="seed_mass")]))
+
+
+alt_grad_spp_numbers<-unlist(lapply(X = unique(alt_grad_tidy$plot),FUN = function(x){
+  data_i<-alt_grad_tidy[which(alt_grad_tidy$plot==x),]
+  nrow(data_i[data_i$abundance>1,])
+}))
+
+
+###############################################################################
+full_spp_list<-unique(c(full_spp_list,as.character(alt_grad_tidy$species)))
+full_spp_list<-sort(unique(trimws(full_spp_list)))
+full_spp_list
