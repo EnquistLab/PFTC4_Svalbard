@@ -1,7 +1,7 @@
 #!/bin/sh
 cd ~/svalbard/PFTC4_Svalbard/traits/Rdatagathering/
 
-xsane
+xsane &
 
 while true
 do
