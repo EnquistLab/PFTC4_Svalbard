@@ -52,3 +52,6 @@ vignettes/*.pdf
 *.pdf
 *.jpeg
 .my.cnf
+
+
+*.DS_Store
