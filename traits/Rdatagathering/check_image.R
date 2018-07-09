@@ -9,7 +9,7 @@ check_image <- function(pathfile, check_ij = TRUE){
     x11()
     plot(1, 1, type = "n", axes = FALSE, xlab = "", ylab = "")
     title(main = paste(strwrap(msg, width = 30), collapse = "\n"), col.main = "red", line = -1)
-    Sys.sleep(5)
+    Sys.sleep(25000)
     stop(msg)
   }
   
