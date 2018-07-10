@@ -36,6 +36,7 @@ vignettes/*.pdf
 *.sqlite
 *.dat
 *.docx
+*.doc
 *.RData.Tmp1
 !envelope_codes.Rdata
 
