@@ -52,6 +52,7 @@ vignettes/*.pdf
 *.html
 *.pdf
 *.jpeg
+*.tif
 .my.cnf
 
 
