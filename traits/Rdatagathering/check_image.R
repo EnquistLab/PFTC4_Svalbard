@@ -5,31 +5,60 @@ check_image <- function(pathfile, check_ij = TRUE){
   
   file <- basename(pathfile)  
   
-  stop2 <- function(msg) {
+  stop2 <- function(msg, rename = FALSE) {
     x11()
     plot(1, 1, type = "n", axes = FALSE, xlab = "", ylab = "")
     title(main = paste(strwrap(msg, width = 30), collapse = "\n"), col.main = "red", line = -1)
     locator(1)
-    stop(msg)
+    graphics.off()
+    if(isTRUE(rename)){
+      message("rename")
+      source("varEntryDialog.r")
+      newName <- varEntryDialog(
+        vars=c('Correct_name'),
+        labels=c('Enter correct name'),
+        fun=c(function(x) {
+          # check extension
+          if(!grepl("([^\\s]+(\\.(jpg|jpeg))$)", x, ignore.case = TRUE)){
+            stop(paste0("File extension on ", x, " not permitted - use '.jpg'"))
+          }
+                               
+          # check file name is permitted
+          load("envelope_codes.Rdata")
+          if(!grepl("^[A-Z]{3}\\d{4}\\.(jpg|jpeg)$", x, ignore.case = TRUE)){
+           stop(paste0("File name ", x, " not expected format (3-letters, 4-numbers)"))
+          }
+          file_base <- gsub("(^[A-Z]{3}\\d{4}).*", "\\1", x)
+         
+
+          if(!file_base %in% all_codes$hashcode){
+            stop(paste0("File name ", x, " not in list of permitted names"))
+          }
+      }))
+      file.rename(from = pathfile, to = paste0(dirname(pathfile), newName))
+      
+    } else{
+      stop(msg)
+    }
   }
   
 
   # check extension
   if(!grepl("([^\\s]+(\\.(jpg|jpeg))$)", file, ignore.case = TRUE)){
-    stop2(paste0("File extension on ", file, " not permitted - use '.jpg'"))
+    stop2(paste0("File extension on ", file, " not permitted - use '.jpg'"), rename = TRUE)
   }
   
   # check file name is permitted
  
   if(!grepl("^[A-Z]{3}\\d{4}\\.(jpg|jpeg)$", file, ignore.case = TRUE)){
-    stop2(paste0("File name ", file, " not expected format (3-letters, 4-numbers)"))
+    stop2(paste0("File name ", file, " not expected format (3-letters, 4-numbers)"), rename = TRUE)
   }
   file_base <- gsub("(^[A-Z]{3}\\d{4}).*", "\\1", file)
 
   load("envelope_codes.Rdata")# makes all_codes  
 
   if(!file_base %in% all_codes$hashcode){
-    stop2(paste0("File name ", file, " not in list of permitted names"))
+    stop2(paste0("File name ", file, " not in list of permitted names"), rename = TRUE)
   }
   
 
