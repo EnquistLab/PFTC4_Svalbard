@@ -2,6 +2,10 @@ library("rgbif")
 library("tidyverse")
 library("mapdata")
 
+
+name_backbone("Sphagnum warnstorfii")
+
+
 if(!exists("gbif/sj.rdata")){
   load("gbif/sj.rdata")
 }else{#slow
@@ -13,8 +17,17 @@ if(!exists("gbif/sj.rdata")){
       decimalLatitude = "74,82",
       decimalLongitude = "8,36"
     )
+
+  bryo <- occ_search(
+    taxonKey = 35,
+    hasCoordinate = TRUE,
+    country = "SJ",
+    limit = 100000,
+    decimalLatitude = "74,82",
+    decimalLongitude = "8,36"
+  )
   
-  save(sj, file = "gbif/sj.rdata")
+  save(sj, bryo, file = "gbif/sj.rdata")
 }
 
 sj$data <- sj$data %>% filter(basisOfRecord != "FOSSIL_SPECIMEN")
@@ -37,3 +50,7 @@ sj$data %>%
   labs(x = "", y = "") +
   theme_minimal() +
   facet_wrap(~ name, ncol = 7)
+
+#bryo
+
+bryo$data %>% count(name)
