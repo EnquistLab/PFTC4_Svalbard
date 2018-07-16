@@ -34,5 +34,6 @@ main <- function(){
     }
     
     cat("Finished")
+    readline(prompt = "Press enter to continue")
 }
 main()
