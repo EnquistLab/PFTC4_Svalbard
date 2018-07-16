@@ -45,20 +45,20 @@ check_image <- function(pathfile, check_ij = TRUE){
 
   # check extension
   if(!grepl("([^\\s]+(\\.(jpg|jpeg))$)", file, ignore.case = TRUE)){
-    stop2(paste0("File extension on ", file, " not permitted - use '.jpg'"), rename = TRUE)
+    stop2(paste0("File extension on ", file, " not permitted - use '.jpg'"), rename = FALSE)
   }
   
   # check file name is permitted
  
   if(!grepl("^[A-Z]{3}\\d{4}\\.(jpg|jpeg)$", file, ignore.case = TRUE)){
-    stop2(paste0("File name ", file, " not expected format (3-letters, 4-numbers)"), rename = TRUE)
+    stop2(paste0("File name ", file, " not expected format (3-letters, 4-numbers)"), rename = FALSE)
   }
   file_base <- gsub("(^[A-Z]{3}\\d{4}).*", "\\1", file)
 
   load("envelope_codes.Rdata")# makes all_codes  
 
   if(!file_base %in% all_codes$hashcode){
-    stop2(paste0("File name ", file, " not in list of permitted names"), rename = TRUE)
+    stop2(paste0("File name ", file, " not in list of permitted names"), rename = FALSE)
   }
   
 
