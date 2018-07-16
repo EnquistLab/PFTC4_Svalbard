@@ -34,6 +34,7 @@ main <- function(){
     }
     
     cat("Finished")
-    readline(prompt = "Press enter to continue")
+    cat("Hit enter to continue")
+    readLines("stdin",n=1)
 }
 main()
