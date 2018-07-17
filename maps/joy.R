@@ -1,4 +1,3 @@
-library("rgdal")
 library("tidyverse")
 library("ggridges")
 
@@ -11,18 +10,13 @@ sv2 <- sv %>%
   as_tibble()
 dim(sv2)
 
-
-
-
 sv2 %>% 
   filter(
-    y %% 10000 == 15, 
+    y %% 10000 == 15, #transects every 10km
     y > 8410000# no Bjørnøya
   ) %>% 
-  filter(
-    y >= min(y[S0_DTM50 > 0])
-    ) %>% 
-  mutate(S0_DTM50 = if_else(S0_DTM50 == 0, NA_real_, S0_DTM50)) %>% 
+  filter(y >= min(y[S0_DTM50 > 0])) %>% #no sea south of Sv
+  mutate(S0_DTM50 = if_else(S0_DTM50 == 0, NA_real_, S0_DTM50)) %>%#blank sea 
   ggplot(aes(x = x, y = y, group = y, height = S0_DTM50 * 15)) +
   geom_ridgeline(fill = NA) +
   coord_equal() +
