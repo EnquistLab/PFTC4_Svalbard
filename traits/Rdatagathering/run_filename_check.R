@@ -4,7 +4,7 @@ main <- function(){
     # check extension
     wrong_extension <- !grepl("([^\\s]+(\\.(jpg|jpeg))$)", files, ignore.case = TRUE)
    if(any(wrong_extension)){
-     cat("These files have the wrong extension\n")
+     cat("These files have the wrong extension (or a space somewhere)\n")
      print(t(files[wrong_extension]))
      cat("-----\n")
    }
@@ -27,7 +27,7 @@ main <- function(){
     load("envelope_codes.Rdata")# loads codes  
     
     invalid_name <- !file_base %in% all_codes$hashcode
-    if(any(wrong_format)){
+    if(any(invalid_name)){
       cat("Invalid codes")
       print(t(file_base[invalid_name]))
       cat("-----\n")
