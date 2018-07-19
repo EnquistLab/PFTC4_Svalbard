@@ -29,7 +29,7 @@ filepath <- file.path(path, f)
 process.file <-  function(file){
   file.copy(file, new.folder)
   area <- run.ij(
-    path.imagej = "/usr/bin/imagej", 
+    path.imagej = "/usr/share/java/", 
     set.directory = new.folder, 
     distance.pixel = 237, 
     known.distance = 2, 
