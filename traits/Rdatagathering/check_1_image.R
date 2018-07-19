@@ -13,9 +13,10 @@ if(!require("LeafArea")){
 path <- "~/Desktop/Svalbard_leaves"
 
 print(dir(path = path))
+cat("Enter name of file to check")
 filepath <- file.path(
     path, 
-    basename(file.choose())
+    readLines(n = 1)
   )
 
 
