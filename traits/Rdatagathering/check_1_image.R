@@ -16,6 +16,7 @@ path <- "~/Desktop/Svalbard_leaves"
 print(dir(path = path))
 cat("Enter name of file to check:\n")
 f <- readLines(con = stdin(), n = 1)
+cat("\nFile chosen", f) 
 filepath <- file.path(path, f)
 
 #Function to calculate leaf area
