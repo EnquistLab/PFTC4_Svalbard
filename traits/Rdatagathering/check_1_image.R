@@ -2,7 +2,7 @@
 ### CALCULATE LEAF AREA
 
 #load packages etc
-If(!require("devtools")){
+if(!require("devtools")){
   install.packages("devtools")
 }
 if(!require("LeafArea")){
