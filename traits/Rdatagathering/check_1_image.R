@@ -3,13 +3,11 @@
 
 #load packages etc
 if(!require("devtools")){
-  install.packages("devtools")
+  install.packages("devtools", repos = "https://cran.uib.no")
 }
 if(!require("LeafArea")){
   devtools::install_github("richardjtelford/LeafArea")
 }
-
-source("traits/Rdatagathering/varEntryDialog.r")
 
 ##get filename to check
 path <- "~/Desktop/Svalbard_leaves"
