@@ -19,14 +19,20 @@ filepath <- file.path(
     readLines(n = 1)
   )
 
-
-
-
 #Function to calculate leaf area
 process.file <-  function(file){
   
   file.copy(file, newfolder)
-  area <- run.ij(path.imagej = "/usr/bin/imagej", set.directory = new.folder, distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 50, trim.pixel2 = 150, save.image = TRUE)
+  area <- run.ij(
+    path.imagej = "/usr/bin/imagej", 
+    set.directory = newfolder, 
+    distance.pixel = 237, 
+    known.distance = 2, 
+    log = TRUE, 
+    low.size = 0.005, 
+    trim.pixel = 50, 
+    trim.pixel2 = 150, 
+    save.image = TRUE)
 
   file.copy(dir(new.folder, full.names = TRUE, pattern = "\\.tif"), output.folder)
   Sys.sleep(0.1)
