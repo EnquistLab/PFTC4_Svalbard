@@ -21,11 +21,10 @@ filepath <- file.path(
 
 #Function to calculate leaf area
 process.file <-  function(file){
-  
-  file.copy(file, newfolder)
+  file.copy(file, new.folder)
   area <- run.ij(
     path.imagej = "/usr/bin/imagej", 
-    set.directory = newfolder, 
+    set.directory = new.folder, 
     distance.pixel = 237, 
     known.distance = 2, 
     log = TRUE, 
@@ -44,14 +43,14 @@ process.file <-  function(file){
 
 
 # Calculate leaf area
-newfolder = file.path(path, "temp")
-if(dir.exists(newfolder)){
-  dir.create(path, newfolder)
+new.folder <- file.path(path, "temp")
+if(dir.exists(new.folder)){
+  dir.create(new.folder)
 }  
 
 output.folder <- file.path(path, "ij_out")
 if(dir.exists(output.folder)){
-  dir.create(path, output.folder)
+  dir.create(output.folder)
 }  
 
 
