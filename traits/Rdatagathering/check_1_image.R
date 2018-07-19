@@ -2,10 +2,11 @@
 ### CALCULATE LEAF AREA
 
 #load packages etc
-if(!require("devtools")){
-  install.packages("devtools", repos = "https://cran.uib.no")
-}
 if(!require("LeafArea")){
+  if(!require("devtools")){
+    install.packages("devtools", repos = "https://cran.uib.no")
+  }
+
   devtools::install_github("richardjtelford/LeafArea")
 }
 
@@ -16,7 +17,7 @@ print(dir(path = path))
 cat("Enter name of file to check")
 filepath <- file.path(
     path, 
-    readLines(n = 1)
+    readLines(con = stdin(), n = 1)
   )
 
 #Function to calculate leaf area
