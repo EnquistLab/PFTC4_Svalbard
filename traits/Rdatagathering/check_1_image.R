@@ -50,12 +50,12 @@ process.file <-  function(file){
 
 # Calculate leaf area
 new.folder <- file.path(path, "temp")
-if(dir.exists(new.folder)){
+if(!dir.exists(new.folder)){
   dir.create(new.folder)
 }  
 
 output.folder <- file.path(path, "ij_out")
-if(dir.exists(output.folder)){
+if(!dir.exists(output.folder)){
   dir.create(output.folder)
 }  
 
