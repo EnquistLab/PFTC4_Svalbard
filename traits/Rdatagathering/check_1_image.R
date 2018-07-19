@@ -11,7 +11,8 @@ if(!require("LeafArea")){
 
 ##get filename to check
 path <- "~/Desktop/Svalbard_leaves"
-print(ls(path))
+
+print(dir(path = path))
 filepath <- file.path(
     path, 
     basename(file.choose())
