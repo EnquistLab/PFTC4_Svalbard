@@ -9,13 +9,19 @@ if(!require("LeafArea")){
 
   devtools::install_github("richardjtelford/LeafArea")
 }
+source("varEntryDialog.r")
+
 
 ##get filename to check
 path <- "~/Desktop/Svalbard_leaves"
 
 print(dir(path = path))
-cat("Enter name of file to check:\n")
-f <- readLines(con = stdin(), n = 1)
+#cat("Enter name of file to check:\n")
+#f <- readLines(con = stdin(), n = 1)
+f <- varEntryDialog(
+  vars=c('file'),
+  labels=c('File to check'))$file
+    
 cat("\nFile chosen", f) 
 filepath <- file.path(path, f)
 
