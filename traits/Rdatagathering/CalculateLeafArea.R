@@ -15,7 +15,7 @@ loop.files <-  function(files){
   #"/", gsub("-NA$", "", newfile)))
   #}
   print(files)
-  area <- try(run.ij(set.directory = new.folder, distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 50, trim.pixel2 = 150, save.image = TRUE))
+  area <- try(run.ij(set.directory = new.folder, distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 55, trim.pixel2 = 150, save.image = TRUE))
   if(inherits(area, "try-error")){
     return(data.frame(LeafArea = NA))
   }
@@ -27,35 +27,44 @@ loop.files <-  function(files){
 }
 
 
+# TASK: Find the scans from these leaves. Describe potential problems for these leaves
+AEC8296
+AJI6590
+ALW3077
+AUJ7139
+AUL1863
+AVE0287
+BWF1270
+CAF5903
+BJC4868
+AFO1112
+AWU0779
+BWZ2813
+
+# TASK: Are there consistent problems with some species that should be considered when calculating the leaf area.
+
+
+
+# TASK: Calculate the leaf area using run.ij and check if there are problem.
+
 # test run.ij
-run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 50, trim.pixel2 = 150, save.image = TRUE)
+run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 55, trim.pixel2 = 150, save.image = TRUE)
 
 
-### DELETE
-#list.of.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-#list.of.files16 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/16_03_2018"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-#list.of.files17 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/17_03_2018"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-#list.of.files18 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/18_03_18"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-#list.of.files19 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/19_03_18"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-#new.folder <- "/Volumes/PFT3/Temp"
-#output.folder <- "/Volumes/PFT3/Output"
-#output.folder <- "/Volumes/PFT3/Output16"
-#output.folder <- "/Volumes/PFT3/Output17"
-#output.folder <- "/Volumes/PFT3/Output18"
-#output.folder <- "/Volumes/PFT3/Output19"
 
-#LeafArea <- plyr::ldply(list.of.files, loop.files)
-#LeafArea16 <- plyr::ldply(list.of.files16, loop.files)
-#LeafArea17 <- plyr::ldply(list.of.files17, loop.files)
-#LeafArea18 <- plyr::ldply(list.of.files18, loop.files)
-#LeafArea19 <- plyr::ldply(list.of.files19, loop.files)
-#LeafArea.raw <- LeafArea.raw %>% 
-  #select(ID, LeafArea) %>% 
-  #rbind(LeafArea19)
 
+#*************************************************************************************
 
 # Calculate leaf area
-list.of.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+list.of.files <- dir(path = paste0("/Volumes/Ohne Titel/Leaf Scans"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+dd <- basename(list.of.files) %>% 
+  as.tibble() %>% 
+  mutate(value = gsub(".jpeg", "", value))
+
+setdiff(dd$value, all_codes$hashcode)
+
+traits %>% anti_join(LeafArea2018, by = "ID") %>% distinct(ID) %>% pn
+
 new.folder <- "/Volumes/PFT3/Temp"
 output.folder <- "/Volumes/PFT3/Output_Peru_28-5-2018"
 
