@@ -5,6 +5,23 @@
 devtools::install_github("richardjtelford/LeafArea")
 library(LeafArea)
 
+
+
+# TASK Check LeafIDs
+# Load trait IDs
+load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
+
+# List of scan names
+list.of.files <- dir(path = paste0("/Volumes/Ohne Titel/Leaf Scans"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+
+dd <- basename(list.of.files) %>% 
+  as.tibble() %>% 
+  mutate(value = gsub(".jpeg", "", value))
+
+setdiff(dd$value, all_codes$hashcode)
+
+
+
 # Function to calculate leaf area
 loop.files <-  function(files){
   
