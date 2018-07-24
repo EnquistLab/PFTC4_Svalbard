@@ -2,7 +2,7 @@
 title: "TidyrCoding"
 author: "Aud Halbritter & Richard Telford"
 date: "10 7 2018"
-output: html_document
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
