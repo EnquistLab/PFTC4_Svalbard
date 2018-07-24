@@ -74,15 +74,35 @@ if you have a github account, "fork" the repo.
 
 b) Explore the structure of the repo.
 
-c) Creat a folder data in the traits folder (traits/data) and copy the spreadsheet containing the data into the new folder.
+c) Open "Svalbard Analysis.Rproj" in RStudio. Load the data from google sheet using the following code:
 
-d) Open "Svalbard Analysis.Rproj" in RStudio. Load the data using the following code:
 
 ```{r, eval = FALSE}
-# use this code to read in data
-traits <- load(file = "traits/data/SpreadsheetName.xlsx")
+# load libraries
+# you might have to install the packages if this is the first time you are using them:
+install.packages("tidyverse") # use this line for each package you want to load.
+
+library("tidyverse")
+library("lubridate")
+library("tpl")
+library("googlesheets")
+
+# little magic trick
+pn <- . %>% print(n = Inf)
+
+# Check which tables you have access to
+gs_ls()
+# which google sheets do you have access to?
+trait <- gs_title("LeafTrait_Svalbard")
+# list worksheets
+gs_ws_ls(trait)
+#download data
+traits <- gs_read(ss = trait, ws = "Tabellenblatt1") %>% as.tibble()
+
   
 ```
+
+d) look at the data and get familiar with the structure. What data does each column contain, etc.
 
 
 <br>
@@ -95,8 +115,8 @@ This operator allows you to pipe the output from one function to the input of an
 
 ```{r, eval = FALSE}
 traits %>%
-  filter(Project == "", Experiment == "B", Site == "QUE") %>% 
-  select(Area_cm2)
+  filter(Project == "T", Site == "B", Genus == "Bistorta") %>% 
+  select(Wet_mass_g)
 ```
 
 <br>
@@ -124,22 +144,15 @@ dplyr and tidyr use simple one word verbs as functions:
 
 ## Taks 2 - get familiar with dplyr and tidyr
 
-Install and load the packages. Tidyverse is a collection of packages that are often used together, such as dpylr, tidyr, ggplot and many more.
-
-```{r, eval = FALSE}
-install.packages("tidyverse")
-library("tidyverse")
-```
-
 Use tidyverse notation!
 
-a) Reduce the data set to all observataions from Site PIL and WAY, Experiment B and Genus xxx.
+a) Reduce the data set to all observataions from the bird cliff and elevational gradient, Elevation B and Bistorta vivipara.
 
-b) Create a data frame with Site, Plot, Genus, Area_cm2 and Wet_Mass_g, and add a new column to the data set .... And sort the table for Genus within Site.
+b) Create a data frame with Site, Elevation, Plot, Genus, Species, Wet_Mass_g, Leaf_thickness 1 to 3. Add a new column to the data set which is called Mean_leaf_thickness_cm2. Then sort the data for Genus within Site.
 
 c) Calculate the mean leaf area (Area_cm2) across all species separatly for each site. And then for each species across all sites.
 
-d) Select the columns Site and Area_cm2 and make a fat table with the different Sites in different columns. And then revers to a thin table again.
+d) Select the columns Site and Wet_mass_g and make a fat table with the different Sites in different columns. And then revers it to a thin table again.
 
 <br>
 
@@ -239,13 +252,13 @@ Use # to start comments.
 ```{r, eval = FALSE}
 
 traits %>%
-  filter(Project == "ITEX") %>% 
+  filter(Site == "X") %>% 
   
   # replace wrong species name
-  mutate(Species = ifelse(Plot == 3, "Carex x", Species)) %>% 
+  mutate(Species = ifelse(Species == "Oxyra", "Oxyria", Species)) %>% 
   
   # calculate mean leaf area for each treatment and species
-  group_by(Treatment, Species) %>%
+  group_by(Site, Elevation, Taxon) %>%
   summarise(mean = mean(Area_cm2))
 
 ```
@@ -253,9 +266,9 @@ traits %>%
 ```{r, eval = FALSE}
 
 traits %>%
-filter(Project == "ITEX") %>% 
-mutate(Species = ifelse(Plot == 3, "Carex x", Species)) %>% 
-group_by(Treatment, Species) %>%
+filter(Site == "X") %>% 
+mutate(Species = ifelse(Species == "Oxyra", "Oxyria", Species)) %>% 
+group_by(Site, Elevation, Taxon) %>%
 summarise(mean = mean(Area_cm2))
 
 ```
@@ -333,7 +346,7 @@ traits %>%
   filter(ID != "AGV3567")
 
 # flag a wrong observation
-dat %>% 
+traits %>% 
   mutate(Flag = ifelse(ID == "AGV3567", "wrong LeafArea", NA))
 ```
 
@@ -347,14 +360,14 @@ dat %>%
  
 <br>
 
-## DRAW A PLOT
+## MAKE A PLOT
 
 A very quick intro to ggplot:
 - Components are added together with a +
 - 
 
 Structure:
-ggplot(DATA, aes(x = X-AXIS, y = Y-AXIS, OTHER ARGUMENTS LIKE COLOR, SHAPE)) +
+ggplot(DATA, aes(x = X-AXIS, y = Y-AXIS, OTHER ARGUMENTS LIKE COLOR, SHAPE, LINETYPE)) +
   geom_point() # drawing points
 
 
@@ -391,3 +404,5 @@ Hadley Wickham, H. Style Guide _Advanced R_
 [http://adv-r.had.co.nz/Style.html](http://adv-r.had.co.nz/Style.html)
 
 RStudio Cheat Sheet
+https://www.rstudio.com/resources/cheatsheets/
+
