@@ -16,7 +16,7 @@ LeafArea2018 %>% anti_join(traits, by = "ID") %>% distinct(ID) %>% pn
 
 # Check if ID's are valid
 # get all valid IDs
-load("traits/Rdatagathering/envelope_codes.Rdata")
+load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
 ID.list <- all_codes$hashcode
 setdiff(LeafArea2018$ID, ID.list)
 setdiff(traits$ID, ID.list)
