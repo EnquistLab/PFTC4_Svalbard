@@ -2,7 +2,7 @@ library("tidyverse")
 library("lubridate")
 library("directlabels")
 
-meanT <- read.table("climate/vgdcnSV000001008.dat") %>% 
+meanT <- read.table("climate/data/vgdcnSV000001008.dat") %>% 
   set_names(c("year", "month", "day", "meanT")) %>% 
   mutate(date = ymd(paste(year, month, day, sep = "-")), 
          date0 = ymd(paste(2016, month, day, sep = "-")))
