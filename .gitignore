@@ -38,6 +38,7 @@ vignettes/*.pdf
 *.docx
 *.doc
 *.RData.Tmp1
+!vgdcnSV000001008.dat
 !envelope_codes.Rdata
 
 #rasters & shapefiles
