@@ -52,6 +52,7 @@ vignettes/*.pdf
 !leaf_clip_art_thumb.png
 !leaf_clip_art_thumb2.png
 *.html
+!ReproducibleCoding.html
 *.pdf
 *.jpeg
 *.tif
