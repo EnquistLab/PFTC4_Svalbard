@@ -76,6 +76,9 @@ load(file = "traits/data/LeafArea.raw.Rdata", verbose = TRUE)
 # TASK: Calculate leaf area per LeafID
 
 
+# TASK: Check duplicate leaves, e.g. exact same leaf area
+
+
 
 #*************************************************************************************
 
