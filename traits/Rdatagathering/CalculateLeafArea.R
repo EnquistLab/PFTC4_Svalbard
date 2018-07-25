@@ -3,7 +3,8 @@
 
 # load libraries
 devtools::install_github("richardjtelford/LeafArea")
-library(LeafArea)
+library("LeafArea")
+library("tidyverse")
 
 
 
@@ -68,6 +69,12 @@ BWZ2813
 run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 55, trim.pixel2 = 150, save.image = TRUE)
 
 
+# Load LeafArea.raw.Rdata
+load(file = "traits/data/LeafArea.raw.Rdata", verbose = TRUE)
+
+
+# TASK: Calculate leaf area per LeafID
+
 
 
 #*************************************************************************************
@@ -82,8 +89,8 @@ setdiff(dd$value, all_codes$hashcode)
 
 traits %>% anti_join(LeafArea2018, by = "ID") %>% distinct(ID) %>% pn
 
-new.folder <- "/Volumes/PFT3/Temp"
-output.folder <- "/Volumes/PFT3/Output_Peru_28-5-2018"
+new.folder <- "/Volumes/Ohne Titel/Temp/"
+output.folder <- "/Volumes/Ohne Titel/Leaf_Output/"
 
 LeafArea.raw <- plyr::ldply(list.of.files, loop.files)
 
@@ -94,75 +101,6 @@ save(LeafArea.raw, file = "traits/data/LeafArea.raw.Rdata")
 LeafArea %>% 
   group_by(ID) %>% 
   filter()
-
-# not whole on scan - area needs to be recalcuated with less croping
-#BEE4484
-#BEG0417
-#CJY6856
-#CRU9363
-#CVH6840
-#DBV0811
-#DDM5359
-#DED5654
-#DEE3207
-#DEH6810
-#DEW7045
-#DFO3811
-#DFR5777
-#DHQ0857
-#DLU5214
-#DNV2097
-#DOM7296
-#DOQ1487
-#DOV9618
-#DPB9248
-#DPW5556
-#DTO2944
-#DUO6664
-#DXD7866
-#DXH3658
-#DXQ1481
-#DYG2933
-#EBM5766
-#ECM0628
-#ECO7096
-#EDE1797
-#EDP2916
-#EDT8254
-#EFU8488
-#EGP6185
-#EJE1667
-#EJT4683
-#EMF4580
-#EOC4565
-#EOH0534
-#EOJ0642
-#EUG2994
-#EUK3005
-#EUR5376
-#EUS8015
-#FDA2506
-#FDB0882
-#EPV0866
-#EPW2330
-#EQO9652
-#EQQ2320
-#EQV8337
-#ERM9285
-#FBV8875
-#FDL7538
-#BEE4484
-#BEG0417
-#CJY6856
-#EQJ1944
-#FDA2506
-#bov5280_1
-
-
-# Scan again!!!
-#EHP2066 empty and double - scan is ok
-#FDF1809 empty and double - scan is ok
-#DOK4761 empty and double - scan is ok
 
 
 
