@@ -1,5 +1,5 @@
 
-### CALCULATE LEAF AREA
+#### CALCULATE LEAF AREA ####
 
 # load libraries
 devtools::install_github("richardjtelford/LeafArea")
@@ -7,8 +7,7 @@ library("LeafArea")
 library("tidyverse")
 
 
-
-# TASK Check LeafIDs
+#### TASK Check LeafIDs
 # Load trait IDs
 load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
 
@@ -20,7 +19,7 @@ dd <- basename(list.of.files) %>%
   mutate(value = gsub(".jpeg", "", value))
 
 setdiff(dd$value, all_codes$hashcode)
-
+# Only "Unknown_2018-07-20_01_05"
 
 
 # Function to calculate leaf area
@@ -45,7 +44,8 @@ loop.files <-  function(files){
 }
 
 
-# TASK: Find the scans from these leaves. Describe potential problems for these leaves
+
+#### TASK: Find the scans from these leaves. Describe potential problems for these leaves
 AEC8296
 AJI6590
 ALW3077
@@ -59,11 +59,12 @@ AFO1112
 AWU0779
 BWZ2813
 
-# TASK: Are there consistent problems with some species that should be considered when calculating the leaf area.
+
+#### TASK: Are there consistent problems with some species that should be considered when calculating the leaf area.
 
 
 
-# TASK: Calculate the leaf area using run.ij and check if there are problem.
+#### TASK: Calculate the leaf area using run.ij and check if there are problem.
 
 # test run.ij
 run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 55, trim.pixel2 = 150, save.image = TRUE)
@@ -79,18 +80,8 @@ load(file = "traits/data/LeafArea.raw.Rdata", verbose = TRUE)
 # TASK: Check duplicate leaves, e.g. exact same leaf area
 
 
-
-#*************************************************************************************
-
-# Calculate leaf area
-list.of.files <- dir(path = paste0("/Volumes/Ohne Titel/Leaf Scans"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-dd <- basename(list.of.files) %>% 
-  as.tibble() %>% 
-  mutate(value = gsub(".jpeg", "", value))
-
-setdiff(dd$value, all_codes$hashcode)
-
-traits %>% anti_join(LeafArea2018, by = "ID") %>% distinct(ID) %>% pn
+#### Run run.ij to get areas
+list.of.files <- dir(path = paste0("/Volumes/Ohne Titel/Leaf Scans/2018-07-24/"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
 
 new.folder <- "/Volumes/Ohne Titel/Temp/"
 output.folder <- "/Volumes/Ohne Titel/Leaf_Output/"
@@ -104,6 +95,16 @@ save(LeafArea.raw, file = "traits/data/LeafArea.raw.Rdata")
 LeafArea %>% 
   group_by(ID) %>% 
   filter()
+
+#### Calculate leaf area
+load("traits/data/LeafArea.raw.Rdata", verbose = TRUE)
+LeafArea2018 <- LeafArea.raw %>% 
+  mutate(ID = substr(ID, 1, 7)) %>% 
+  # Sum areas for each ID
+  group_by(ID) %>% 
+  summarise(Area_cm2 = sum(LeafArea), NumberLeavesScan = n())
+
+save(LeafArea2018, file = "traits/data/LeafArea2018.Rdata")
 
 
 
@@ -121,6 +122,3 @@ sean_cropped_LA_new <- data.frame(ID = names(unlist(sean_area
 
 save(sean_cropped_LA_new, file = "C:/Users/cpo082/Desktop/leaf
      data/sean_cropped_LA_new.Rdata")
-
-
-
