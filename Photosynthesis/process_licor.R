@@ -4,6 +4,8 @@ library(readxl)
 
 source("Photosynthesis/licor_read_files.R")
 
+# put files for analysis into same folder as code
+
 # read in raw licor files and parse file name (format: 0000-id-ddmmyy) into two new columns (id and date)
 licor <- list.files(path = "Photosynthesis/25072018_licor_files/", full.names = TRUE) %>% 
   set_names(basename(.)) %>% 
