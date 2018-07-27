@@ -2,34 +2,76 @@ library(tidyverse)
 library(readr)
 library(readxl)
 
-source("Photosynthesis/licor_read_files.R")
-
-# put files for analysis into same folder as code
+source("photosynthesis/code/licor_read_files.R")
 
 # read in raw licor files and parse file name (format: 0000-id-ddmmyy) into two new columns (id and date)
-licor <- list.files(path = "Photosynthesis/25072018_licor_files/", full.names = TRUE) %>% 
+licor <- list.files(path = "photosynthesis/data/25072018_licor_files/", full.names = TRUE) %>% 
   set_names(basename(.)) %>% 
   map_df(read_licor, .id = "run") %>% 
   separate(run, into = c("zero","uniqueid", "date"), sep = "-") %>% 
-  select(-zero)
+  select(-zero) %>%
+  group_by(uniqueid, variable, parameter, level, unit) %>%
+  summarise_all(.funs = mean)
+licor$date <- as.character(licor$date)
+
+peru_licor <- list.files( path ="photosynthesis/data/peru/", full.names = TRUE) %>% 
+  set_names(basename(.)) %>%
+  map_df(read_licor, .id = "run") %>% 
+  separate(run, into = c("date","initials", "uniqueid"), sep = "-") %>% 
+  select(-initials) %>%
+  group_by(uniqueid, variable, parameter, level, unit) %>%
+  summarise_all(.funs = mean)
+
+china_licor <- read_csv("photosynthesis/data/DataMaster_2015-2016_Finse.csv") %>%
+  rename(uniqueid = Filename, date = Date) %>%
+  select(-sample, -Notes, -Site, -Taxon) 
+
+licor <- bind_rows(svalbard=licor, peru=peru_licor, china=china_licor, .id = "place")
 
 # read in leaf area data, fix any estimates over 6cm
-leaf_area <- read_csv('Photosynthesis/leafarea.csv') %>% 
+leaf_area <- read_csv('photosynthesis/data/leafarea.csv') %>% 
   select(-X1) %>% 
   mutate(
     total.leaf.area = if_else(total.leaf.area > 6, 6, total.leaf.area),
     uniqueid = substring(sample, 1, 7)
-    )
+    )%>%
+  select(-sample)
+
+leaf_area_peru <- read_csv('photosynthesis/data/leafareaperu.csv') %>% 
+  select(-X1) %>% 
+  mutate(
+    total.leaf.area = if_else(total.leaf.area > 6, 6, total.leaf.area),
+    uniqueid = substring(sample, 1, 7)
+  ) %>%
+  select(-sample)
+
+ leaf_area_china <- read_excel('photosynthesis/data/leafareachina.xlsx')  %>% 
+   select(`Area from whole leaf scan`, Filename) %>% 
+   rename(total.leaf.area = `Area from whole leaf scan`, uniqueid = Filename) 
+ leaf_area_china$total.leaf.area <- 6 # temporary until leaf area data is ready
+  # mutate( total.leaf.area = if_else(total.leaf.area > 6, 6, total.leaf.area),
+    # uniqueid = substring(sample, 1, 7)) %>%
+  # select(-sample)
+
+leaf_area <- bind_rows(leaf_area, leaf_area_peru, leaf_area_china)
 
 # read in the species names of each leaf run by unique id
-metadat <- read_excel("Photosynthesis/Photo_data_sheets_filled.xlsx", sheet = 1)
+metadat <- read_excel("photosynthesis/data/Photo_data_sheets_filled.xlsx", sheet = 1) %>%
+select(Taxon, Filename, Site)
+metadat_peru <- read_excel("photosynthesis/data/peru_photo_data_sheets.xlsx", sheet = 2) %>%
+  select(Taxon, `Sample ID`, Site) %>%
+  rename(Filename = `Sample ID`)
+metadat_china <- read_excel('photosynthesis/data/leafareachina.xlsx') %>%
+  select(Taxon, Filename, Site)
+metadat <- bind_rows(metadat, metadat_peru, metadat_china)
 
 anti_join(licor, leaf_area, by = "uniqueid") %>%
   ungroup() %>% 
   distinct(uniqueid)
 anti_join(leaf_area, licor, by = "uniqueid")
 
-licor_leaf <- inner_join(licor, leaf_area, by = "uniqueid") %>% inner_join(metadat, by = c("uniqueid" = "Filename"))
+licor_leaf <- inner_join(licor, leaf_area, by = "uniqueid") %>% inner_join(metadat, by = c("uniqueid" = "Filename")) #%>%
+  #rename(Taxon = Taxon.x = Taxon.y, Site = Site.x = Site.y)
 
 # calculate extra leaf related metrics which scale from basic set of measurements
 recalc_licor <- . %>% 
@@ -71,10 +113,8 @@ res <- licor_leaf %>% recalc_licor
 res %>% filter(uniqueid == "AAF6802") %>% select(Photo, HHMMSS)
 
 # plot leaf temperature/photosynthetic response by nutrient site
-res %>% 
-  group_by(uniqueid, level, Taxon, Site) %>% 
-  summarise_at(vars(StmRat:VpdL), .funs = mean) %>% 
-  ggplot(aes(x = Tleaf, y = Photo, colour = Site, group = uniqueid)) + 
+formatted <- res %>% 
+  ggplot(aes(x = Tleaf, y = Photo, colour = place, group = uniqueid)) + 
   geom_point() + 
 #  geom_line() +
   geom_smooth(method = "lm", formula = y ~ poly(x, 2), show.legend = FALSE, se = FALSE) +
