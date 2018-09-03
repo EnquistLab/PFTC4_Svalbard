@@ -7,6 +7,9 @@ library("lubridate")
 #library("tpl")
 library("googlesheets")
 
+# Source ITEX (for Site-Elevation comninations)
+source(file = "community/ImportITEX.R")
+
 pn <- . %>% print(n = Inf)
 
 
@@ -24,7 +27,7 @@ gs_ws_ls(trait)
 traits <- gs_read(ss = trait, ws = "Tabellenblatt1") %>% as.tibble()
 
 
-#### DATA CHECKING ####
+## DATA CHECKING ##
 # Check LeafID
 # Load trait IDs
 load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
@@ -62,6 +65,8 @@ traits %>%
   select(ID, Elevation, Genus, Species, Plot, Individual_nr, Remark)
 itex.codes %>% pn
 
+
+## FIX THE BUGS ##
 # What was fixed and not fixed
 # Cannot fix
 # 3x stellaria longipes: plot and elev missing
@@ -80,24 +85,6 @@ itex.codes %>% pn
 # AJL5589: change from OTC to CTL. 5-OTC does not exist and only 2 leaves from 5-CTL
 # ALO7062: Plot name was 2 and changed to 2-CTL
 
-
-# !!!!
-#### THINGS TO FIX
-# Empty Plot, Ind_nr
-# ITEX check Elevation and Plot combinations
-# Plot data
-# CHECK IF THERE ARE DOUBLE SCANS!!!
-
-# no species names: AAW8078, AAT5935
-
-# check! Strange Plot nr. ABA8118, ATE5693, AGP2467
-
-
-
-
-#### TRAIT, LEAF AREA AND SPECIES COMMUNITY ####
-# get ITEX codes
-source(file = "community/ImportITEX.R")
 
 traits <- traits %>% 
   # Fix leafID
@@ -120,7 +107,7 @@ traits <- traits %>%
          ID = gsub("CIG850", "CIG8509", ID),
          ID = gsub("CMP9385", "CMP9835", ID)) %>% 
   
-  # Fix Site, elevation etc.
+  # Fix Project, Site, elevation etc.
   mutate(Habitat = ifelse(Site == "X", Elevation, NA)) %>%
   #mutate(Date = dmy(paste(Day, "07-2018", sep = "-"))) %>% 
   mutate(Site = ifelse(Site == "x", "X", Site)) %>% 
@@ -128,6 +115,7 @@ traits <- traits %>%
   mutate(Elevation = toupper(Elevation)) %>% 
   mutate(Elevation = ifelse(Elevation %in% c("3 OR 4", "3 - 4"), "3-4", Elevation)) %>% 
   mutate(Elevation = ifelse(ID == "BSE3271", 2, Elevation)) %>% 
+  mutate(Project = ifelse(Project == "X", "T", Project)) %>% 
   
   # Correct species names
   # Genus
@@ -165,7 +153,7 @@ traits <- traits %>%
          Species = ifelse(Genus == "sanionia" & Species == "uni", "uncinata", Species)) %>% 
   
   # Fix wrong species
-  mutate(Genus = ifelse(ID == "BAR1151", "salix", Genus)) %>% # written wrong from envelop
+  mutate(Genus = ifelse(ID == "BAR1151", "salix", Genus)) %>% # typed in wrong, right on envelop
   mutate(Species = ifelse(ID == "BAR1151", "polaris", Species)) %>% 
   
   # Fix and check plot names
@@ -194,29 +182,41 @@ traits <- traits %>%
 
 
 
-
-#### Join with leaf area
+#### LEAF AREA ####
 load("traits/data/LeafArea2018.Rdata", verbose = TRUE)
 
-# check
-traits %>% 
+# Check Leaf IDs
+setdiff(LeafArea2018$ID, all_codes$hashcode)
+# only Unknown
+
+# check how many ID do not join with trait data
+setdiff(LeafArea2018$ID, traits$ID)
+# Do not fit with any traits and cannot find out which leaf it is:
+#"ATH9996" "BVK6301"  "CRZ2953" "Unknown"
+
+traits2018 %>% 
   anti_join(LeafArea2018, by = "ID") %>% 
   filter(Project != "M") %>% 
-  select(ID, Site, Elevation, Genus, Species, Plot, Remark)
-  distinct(Site, Elevation, Plot)
+  select(ID, Day, Site, Elevation, Genus, Species, Plot, Bulk_nr_leaves, Remark) %>% arrange(ID) %>% pn
+
 
 # Join
 traits2018 <- traits %>% 
   left_join(LeafArea2018, by = "ID") %>% 
   mutate(Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% 
-  mutate(NrLeaves = ifelse(is.na(Bulk_nr_leaves), NumberLeavesScan, Bulk_nr_leaves))
+  mutate(NrLeaves = ifelse(is.na(Bulk_nr_leaves), NumberLeavesScan, Bulk_nr_leaves)) %>% 
   
-# Leaf nr NA: CBR1720, ATO4822, AKW9471
-# Check how many times leaf nr differ
+  # Mark 24 leaves with missing area
+  # For some leaf area checkbox was not checked
+  # AEB3831 was leaf missing
+  mutate(Remark = ifelse(ID %in% c("AWL5310", "BZU8768", "BIE8420", "CUP3093", "BST1760", "BUF9439", "AIO2428", "AVW5412", "AIP2629", "ANW0434", "AEC8296", "AFO1112", "AJI6590", "ALW3077", "AUJ7139", "AUL1863", "AVE0287", "AWU0779", "BJC4868", "BWF1270", "BWZ2813", "CAF5903"), "Missing_leaf_area", Remark)) %>% 
+  mutate(Remark = ifelse(ID %in% c("BKO8767"), paste(Remark, "Missing_leaf_area", sep = "; "), Remark))
 
-#
-dim(traits2018) # 1690
-traits2018 %>% distinct(Taxon) # 37 species
+
+
+# counts
+dim(traits2018) # 1693
+traits2018 %>% distinct(Taxon) # 44 species
 traits2018 %>% group_by(Taxon) %>% count() %>% pn
 
 
