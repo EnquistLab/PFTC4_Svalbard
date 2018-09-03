@@ -69,8 +69,16 @@ LeafArea %>%
 
 #### Calculate leaf area
 load("traits/data/LeafArea.raw.Rdata", verbose = TRUE)
+
 LeafArea2018 <- LeafArea.raw %>% 
+  # remove leaves that were calculated double by mistake
+  group_by(ID, LeafArea) %>% 
+  mutate(n = n()) %>% 
+  filter(n == 1) %>% 
+  ungroup() %>%
+  # remove jpeg etc from ID name
   mutate(ID = substr(ID, 1, 7)) %>% 
+  
   # Sum areas for each ID
   group_by(ID) %>% 
   summarise(Area_cm2 = sum(LeafArea), NumberLeavesScan = n())
