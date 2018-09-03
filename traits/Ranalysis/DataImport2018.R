@@ -212,7 +212,7 @@ traits2018 <- traits %>%
   mutate(Remark = ifelse(ID %in% c("AWL5310", "BZU8768", "BIE8420", "CUP3093", "BST1760", "BUF9439", "AIO2428", "AVW5412", "AIP2629", "ANW0434", "AEC8296", "AFO1112", "AJI6590", "ALW3077", "AUJ7139", "AUL1863", "AVE0287", "AWU0779", "BJC4868", "BWF1270", "BWZ2813", "CAF5903"), "Missing_leaf_area", Remark)) %>% 
   mutate(Remark = ifelse(ID %in% c("BKO8767"), paste(Remark, "Missing_leaf_area", sep = "; "), Remark))
 
-
+save(traits2018, file = "traits/data/traits_SV_2018.Rdata")
 
 # counts
 dim(traits2018) # 1693
@@ -229,17 +229,46 @@ comm <- gs_title("dataPTT4communities")
 # list worksheets
 gs_ws_ls(comm)
 #download data
-community.raw <- gs_read(ss = comm, ws = "DATA") %>% as.tibble()
+communityRaw <- gs_read(ss = comm, ws = "DATA") %>% as.tibble()
 
-community.raw1 <- community.raw %>% 
-  gather(key = Taxon, value = Cover_Fertile, -Entered_by, -Collected_by, -Day, -Site, -Elevation, -Plot, -GPS_Nr, -Lat_N, -Long_E, -Scat_species, -MedianHeight_cm, -Max_height_cm, -Vascular, -Bryophytes, -Lichen_soil, -Lichen_rock, -Rock, -BareGround, -BioCrust, -Litter, -Weather, -Elevation_m, -PlotSize_cm2, -Aspect, -Slope_percent, -GPSUnitAccuracy, -Notes) %>% 
+metaCommunity <- communityRaw %>%
+  select(Day, Site, Elevation, Plot, MedianHeight_cm, Max_height_cm, Vascular, Bryophytes, Lichen_soil, Lichen_rock, Rock, BareGround, BioCrust, Litter, Weather, Elevation_m, PlotSize_cm2, Aspect, Slope_percent, Notes, Entered_by, Collected_by)
+
+
+# Extra Draba data from Finns
+drabas <- read_xlsx(path = "community/data/DRABAS_2.xlsx")
+drabas <- drabas %>% 
+  gather(key = Taxon, value = occurence, -site, -transect, -plot) %>% 
+  filter(occurence > 0) %>% 
+  rename(Site = site, Elevation = transect, Plot = plot) %>% 
+  select(-occurence) %>% 
+  mutate(Entered_by = "Julia", Collected_by = "Julia") %>% 
+  mutate(Cover_Fertile = "0.1_1")
+  
+
+communityRaw1 <- communityRaw %>%
+  select(-GPS_Nr, -Lat_N, -Long_E, -Scat_species, -MedianHeight_cm, -Max_height_cm, -Vascular, -Bryophytes, -Lichen_soil, -Lichen_rock, -Rock, -BareGround, -BioCrust, -Litter, -Weather, -Elevation_m, -PlotSize_cm2, -Aspect, -Slope_percent, -GPSUnitAccuracy) %>% 
+  gather(key = Taxon, value = Cover_Fertile, -Entered_by, -Collected_by, -Day, -Site, -Elevation, -Plot, -Notes) %>% 
   filter(!is.na(Cover_Fertile)) %>% 
-  mutate(Taxon = tolower(Taxon)) %>% 
+  
+  
+  # Rename species
   mutate(Taxon = ifelse(Taxon == "poa alpigena vivipara", "poa arctica_x_pratensis", Taxon)) %>% 
+  
+  # Remove Draba sp1 and sp2
+  filter(!Taxon %in% c("Draba sp1", "Draba sp2")) %>% 
+  bind_rows(drabas) %>% 
+  mutate(Taxon = ifelse(Site == "B" & Elevation == 1 & Plot == "E", "Cerastium sp", Taxon)) %>% 
+  # !!! THIS PLOT HAS CERASTIUM ARCTICA, IS NO DRABA ARCTICA? THEN REMOVE THIS LINE
+  mutate(Taxon = ifelse(Site == "C" & Elevation == 5 & Plot == "D", "Cerastium sp", Taxon)) %>% 
+  filter(Taxon != "No Drabas") %>% 
+  mutate(Taxon = tolower(Taxon)) %>% 
   mutate(Elevation = as.character(Elevation))
+    
 
 # Check
-setdiff(community.raw1$Taxon, traits$Taxon)
+setdiff(communityRaw1$Taxon, traits2018$Taxon)
+setdiff(traits2018$Taxon, communityRaw1$Taxon)
 
 ### need to check how many do not join traits and community.
 ### and how to join community and itex etc.
@@ -272,23 +301,3 @@ save(TraitsCommITEX, file = "traits/data/TraitsCommITEX.Rdata")
 
 
 setdiff(traits1$Taxon, itex1$Taxon)
-
-
-
- 
- 
-  # remove double scan (other leaf is BDJ1110, where ID is also wrong)
-  filter(ID != "VJD1110") %>% 
-  
-  
-  
-  # Sum areas for each ID
-  group_by(ID) %>% 
-  summarise(Area_cm2 = sum(LeafArea)) %>% 
-
-  # replace LeafArea with NA - empty or corrupted scan
-  mutate(Area_cm2 = ifelse(ID == "AUB2092", NA, Area_cm2)) %>% 
-  add_row(ID = "BMB7274", Area_cm2 = NA) %>% 
-  add_row(ID = "EHP2066", Area_cm2 = NA) %>% 
-  add_row(ID = "FDF1809", Area_cm2 = NA)
-
