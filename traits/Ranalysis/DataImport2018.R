@@ -200,7 +200,7 @@ traits2018 %>%
   select(ID, Day, Site, Elevation, Genus, Species, Plot, Bulk_nr_leaves, Remark) %>% arrange(ID) %>% pn
 
 
-# Join
+# Join Area and Traits
 traits2018 <- traits %>% 
   left_join(LeafArea2018, by = "ID") %>% 
   mutate(Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% 
@@ -211,6 +211,77 @@ traits2018 <- traits %>%
   # AEB3831 was leaf missing
   mutate(Remark = ifelse(ID %in% c("AWL5310", "BZU8768", "BIE8420", "CUP3093", "BST1760", "BUF9439", "AIO2428", "AVW5412", "AIP2629", "ANW0434", "AEC8296", "AFO1112", "AJI6590", "ALW3077", "AUJ7139", "AUL1863", "AVE0287", "AWU0779", "BJC4868", "BWF1270", "BWZ2813", "CAF5903"), "Missing_leaf_area", Remark)) %>% 
   mutate(Remark = ifelse(ID %in% c("BKO8767"), paste(Remark, "Missing_leaf_area", sep = "; "), Remark))
+
+
+### Calculate Traits and fix wrong trait values
+traitsSV2018 <- traits2018 %>% 
+  # Make variables consistent with China and Peru
+  rename(Leaf_Area_cm2 = Area_cm2, Dry_Mass_g = Dry_mass_g, Wet_Mass_g = Wet_mass_g, Plant_Height_cm = Plant_height_cm, Leaf_Thickness_1_mm = Leaf_thickness_1_mm, Leaf_Thickness_2_mm = Leaf_thickness_2_mm, Leaf_Thickness_3_mm = Leaf_thickness_3_mm) %>% 
+  
+  # Fix wrong trait values
+  mutate(Leaf_Thickness_3_mm = ifelse(ID == "AWH9637", 0.288, Leaf_Thickness_3_mm),
+         Leaf_Thickness_2_mm = ifelse(ID == "CLG6203", 0.49, Leaf_Thickness_2_mm),
+         Leaf_Thickness_2_mm = ifelse(ID == "CTH9016", 0.276, Leaf_Thickness_2_mm)) %>% 
+  mutate(Wet_Mass_g = ifelse(ID == "AGL0566", 0.0661, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "AMG1572", 0.0955, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "BJO2182", 0.0712, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "AGG1992", 0.055, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "AZF1475", 0.0966, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "BOM3760", 0.0479, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "ASL0771", 0.0884, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "APX3945", 0.0351, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "ADC9307", 0.067, Wet_Mass_g),
+         Remark = ifelse(ID == "ADC9307", "Wet mass 0.607g is clearly wrong; assume it must be 0.067", Remark),
+         Wet_Mass_g = ifelse(ID == "BWU3122", 0.0655, Wet_Mass_g),
+         Remark = ifelse(ID == "BWU3122", "Wet mass 0.6655g is clearly wrong; assume it must be 0.0655", Remark),
+         Wet_Mass_g = ifelse(ID == "BLI0527", 0.053, Wet_Mass_g),
+         Remark = ifelse(ID == "BLI0527", paste(Remark, "Wet mass 0.539g is clearly wrong; assume it must be 0.053", sep = "; "), Remark),
+         Wet_Mass_g = ifelse(ID == "BSC0608", 0.0402, Wet_Mass_g),
+         Remark = ifelse(ID == "BSC0608", "Wet mass 0.4032g is clearly wrong; assume it must be 0.0402", Remark),
+         Wet_Mass_g = ifelse(ID == "AWB8528", 0.0296, Wet_Mass_g),
+         Remark = ifelse(ID == "AWB8528", "Wet mass 0.296g is clearly wrong; assume it must be 0.0296", Remark),
+         Wet_Mass_g = ifelse(ID == "BHV0134", 0.102, Wet_Mass_g),
+         Remark = ifelse(ID == "BHV0134", "Wet mass 1.002g is clearly wrong; assume it must be 0.102", Remark),
+         Wet_Mass_g = ifelse(ID == "BRD0870", 0.0653, Wet_Mass_g),
+         Remark = ifelse(ID == "BRD0870", "Wet mass 0.653g is clearly wrong; assume it must be 0.0653", Remark),
+         Wet_Mass_g = ifelse(ID == "CCD9457", 0.0985, Wet_Mass_g),
+         Remark = ifelse(ID == "CCD9457", "Wet mass 0.985g is clearly wrong; assume it must be 0.0985", Remark)) %>% 
+  mutate(Remark = ifelse(ID %in% c("AHC5738", "AHA7548", "AGY5197", "BTZ1755"), "tiny_leaf", Remark)) %>% 
+  
+  # Replace Area and Thickness with AQL4331, because leaf was mixed after scannig, deltet AQL4331, because leaf was lost
+  mutate(Leaf_Area_cm2 = ifelse(ID == "AEB3831", 2.804, Leaf_Area_cm2),
+         Leaf_Thickness_1_mm = ifelse(ID == "AEB3831", 0.0161, Leaf_Thickness_1_mm),
+         Leaf_Thickness_2_mm = ifelse(ID == "AEB3831", 0.236, Leaf_Thickness_2_mm),
+         Leaf_Thickness_3_mm = ifelse(ID == "AEB3831", 0.194, Leaf_Thickness_3_mm)) %>% 
+  filter(ID != "AQL4331") %>% 
+  
+  # fix wrong leaf numbers
+  mutate(NrLeaves = ifelse(ID == "BCX3331", 14, NrLeaves),
+         NrLeaves = ifelse(ID == "BOB9666", 2, NrLeaves),
+         NrLeaves = ifelse(ID == "ADD9443", 6, NrLeaves),
+         NrLeaves = ifelse(ID == "BMN6819", 1, NrLeaves),
+         NrLeaves = ifelse(ID == "BSL6524", 2, NrLeaves),
+         NrLeaves = ifelse(ID == "CST3822", 3, NrLeaves),
+         NrLeaves = ifelse(ID == "BNW8155", 4, NrLeaves),
+         NrLeaves = ifelse(ID == "ANO7848", 7, NrLeaves),
+         NrLeaves = ifelse(ID == "BXF4662", 8, NrLeaves)) %>% 
+  
+  # Equisetum does not need leaf number = > Leaf nr = 1 because of calculations below
+  mutate(NrLeaves = ifelse(Genus == "equisetum", 1, NrLeaves)) %>% 
+  
+  # Calculate values on the leaf level (mostly bulk samples)
+  rename(Wet_Mass_Total_g = Wet_Mass_g,
+         Dry_Mass_Total_g = Dry_Mass_g,
+         Leaf_Area_Total_cm2 = Leaf_Area_cm2) %>% 
+  mutate(Wet_Mass_g = Wet_Mass_Total_g / NrLeaves,
+         Dry_Mass_g = Dry_Mass_Total_g / NrLeaves,
+         Leaf_Area_cm2 = Leaf_Area_Total_cm2 / NrLeaves) %>% 
+  
+  # Calculate SLA, LMDC
+  mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
+         SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
+         LDMC = Dry_Mass_g / Wet_Mass_g)
+
 
 save(traits2018, file = "traits/data/traits_SV_2018.Rdata")
 
