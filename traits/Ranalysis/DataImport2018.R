@@ -321,6 +321,7 @@ communityRaw1 <- communityRaw %>%
   select(-GPS_Nr, -Lat_N, -Long_E, -Scat_species, -MedianHeight_cm, -Max_height_cm, -Vascular, -Bryophytes, -Lichen_soil, -Lichen_rock, -Rock, -BareGround, -BioCrust, -Litter, -Weather, -Elevation_m, -PlotSize_cm2, -Aspect, -Slope_percent, -GPSUnitAccuracy) %>% 
   gather(key = Taxon, value = Cover_Fertile, -Entered_by, -Collected_by, -Day, -Site, -Elevation, -Plot, -Notes) %>% 
   filter(!is.na(Cover_Fertile)) %>% 
+  separate(col = Cover_Fertile, into = c("Cover", "Fertile"), sep = "_")
   
   
   # Rename species
