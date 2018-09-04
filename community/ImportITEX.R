@@ -8,13 +8,29 @@ itex <- read_excel(path = "data/Inga Svala Jonsdottir ITEX/ENDALEN_SPP_2015.xlsx
 sp <- read_excel(path = "data/Inga Svala Jonsdottir ITEX/Species lists_Iceland_Svalbard.xlsx", sheet = "Endalen")
 
 sp <- sp %>% 
-  select(SPP, GFNARROWarft, GENUS, SPECIES)
+  select(SPP, GFNARROWarft, GENUS, SPECIES) %>% 
+  slice(-1) %>% 
+  mutate(GFNARROWarft = tolower(GFNARROWarft))
 
-itex <- itex %>% 
-  gather(key = SPECIES, value = HITS, -SUBSITE, -TREATMENT, -PLOT, -YEAR, -TOTAL.L, -LITTER, -REINDRO, -BIRDRO, -ROCK, -SOIL, -CRUST) %>% 
+CommunityITEX_SV_2015 <- itex %>% 
+  gather(key = SPP, value = HITS, -SUBSITE, -TREATMENT, -PLOT, -YEAR, -TOTAL.L, -LITTER, -REINDRO, -BIRDRO, -ROCK, -SOIL, -CRUST) %>% 
   filter(HITS > 0) %>% 
-  rename(SPP = SPECIES) %>% 
-  left_join(sp, by = "SPP")
+  left_join(sp, by = c("SPP")) %>% 
+  mutate(GENUS = tolower(GENUS), SPECIES = tolower(SPECIES)) %>% 
+  mutate(Taxon = paste(GENUS, SPECIES, sep = " ")) %>% 
+  rename(Genus = GENUS, Species = SPECIES) %>% 
+  mutate(Elevation = substr(PLOT, 1, 3),
+         Plot = paste(substr(PLOT, 6, nchar(PLOT)), TREATMENT, sep = "-")) %>% 
+  filter(!GFNARROWarft %in% c("lichen", "moss", "liverworth")) %>% 
+  mutate(Taxon = ifelse(Taxon == "NA oppositifolia", "saxifraga oppositifolia", Taxon)) %>% 
+  mutate(Taxon = ifelse(Taxon == "festuca richardsonii", "festuca rubra", Taxon)) %>% 
+  mutate(Taxon = ifelse(Taxon == "pedicularis hisuta", "pedicularis hirsuta", Taxon)) %>% 
+  mutate(Taxon = ifelse(Taxon == "alopecurus boreale", "alopecurus ovatus", Taxon)) %>% 
+  mutate(Taxon = ifelse(Taxon == "stellaria crassipes", "stellaria longipes", Taxon)) %>% 
+  select(-SUBSITE) %>% 
+  rename(Treatment = TREATMENT, Year = YEAR, Crust = CRUST, TotalL = TOTAL.L, Litter = LITTER, Reindro = REINDRO, Birdro = BIRDRO, Rock = ROCK, Soil = SOIL, Hits = HITS, FunctionalGroup = GFNARROWarft)
+
+save(CommunityITEX_SV_2015, file = "community/CommunityITEX_SV_2015.Rdata")
 
 # total hits per plot
 itex %>% 
@@ -39,8 +55,8 @@ Cover95 <- itex %>%
 
 field <- itex %>% 
   filter(!GFNARROWarft %in% c("LICHEN", "MOSS", "LIVERWORT")) %>% 
-  select(TREATMENT, PLOT, GENUS, SPECIES, HITS) %>% 
-  arrange(TREATMENT, PLOT, GENUS)
+  select(TREATMENT, PLOT, Genus, Species, HITS) %>% 
+  arrange(TREATMENT, PLOT, Genus)
 
 itex.codes <- field %>% distinct(TREATMENT, PLOT) %>% 
   mutate(Habitat = substr(PLOT, 1, 3)) %>% 
