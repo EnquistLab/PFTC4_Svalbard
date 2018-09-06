@@ -107,8 +107,6 @@ traits <- traits %>%
          ID = gsub("CIG850", "CIG8509", ID),
          ID = gsub("CMP9385", "CMP9835", ID)) %>% 
   
-  # Fix Project, Site, elevation etc.
-  mutate(Habitat = ifelse(Site == "X", Elevation, NA)) %>%
   #mutate(Date = dmy(paste(Day, "07-2018", sep = "-"))) %>% 
   mutate(Site = ifelse(Site == "x", "X", Site)) %>% 
   mutate(Site = ifelse(ID == "BWS2352", "X", Site)) %>% 
@@ -174,6 +172,9 @@ traits <- traits %>%
   mutate(Plot = ifelse(ID == "ALO7062", "L-2-CTL", Plot)) %>% 
   mutate(Remark = ifelse(ID == "ALO7062", "was 2 and changed to 2-CTL", Remark)) %>%
   mutate(Plot = ifelse(ID == "BVN8783", "L-5-CTL", Plot)) %>% # fix wrong name L5-CTL
+  
+  # Project
+  mutate(Project = ifelse(ID == "AHE5823", "T", Project)) %>% 
   
   # Remove L- from Plot name for ITEX plants
   mutate(Plot = ifelse(Site == "X", substr(Plot, 3, nchar(Plot)), Plot)) %>% 
@@ -280,10 +281,58 @@ traitsSV2018 <- traits2018 %>%
   # Calculate SLA, LMDC
   mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
          SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
-         LDMC = Dry_Mass_g / Wet_Mass_g)
+         LDMC = Dry_Mass_g / Wet_Mass_g,
+         # Measures for the mosses
+         Length_1_cm = is.numeric(Length_1_cm),
+         Length_2_cm = is.numeric(Length_2_cm),
+         Length_3_cm = is.numeric(Length_3_cm),
+         GreenLength_1_cm = is.numeric(GreenLength_1_cm),
+         GreenLength_2_cm = is.numeric(GreenLength_2_cm),
+         GreenLength_3_cm = is.numeric(GreenLength_3_cm),
+         Length_Ave_Moss_cm = (Length_1_cm + Length_2_cm + Length_3_cm)/3,
+         GreenLength_Ave_Moss_cm = (GreenLength_1_cm + GreenLength_2_cm + GreenLength_3_cm)/3) %>% 
+         #Length_Ave_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE)),
+         #GreenLength_Ave_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>% 
+  
+  # Make data speak to other PFTC data
+  rename(Gradient = Site, Site = Elevation, PlotID = Plot, Data_entered_by = Person_data_entered, Comment = Remark) %>% 
+  # join Coords and Elevation
+  # ...
+    mutate(Country = "SV",
+         Year = 2018,
+         Treatment = "C",
+         Date = ymd(paste(Year, 7, Day, sep = "-")),
+         Project = ifelse(Gradient == "X", "X", Project)) %>% 
+  select(Country, Year, Project, Treatment, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
+  
+  
+  
 
 
-save(traits2018, file = "traits/data/traits_SV_2018.Rdata")
+### Divid into separate data sets
+# Gradients, Sean and mosses
+traitsGradients_SV_2018 <- traitsSV2018 %>% 
+  filter(Project %in% c("T", "Sean", "M"))
+save(traits2018, file = "traits/data/traitsGradients_SV_2018.Rdata")
+
+
+# ITEX
+traitsITEX_SV_2018 <- traitsSV2018 %>%
+  filter(Project == "X") %>% 
+  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
+  mutate(Treatment = substr(PlotID, 3, 5))
+save(traits2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
+  
+
+# Saxy
+traitsSAXY_SV_2018 <- traitsSV2018 %>%
+  filter(Project == "Saxy") %>% 
+  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
+  mutate(Site = substr(PlotID, 1, 2))
+save(traits2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
+
+
+
 
 # counts
 dim(traits2018) # 1693
