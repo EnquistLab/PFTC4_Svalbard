@@ -4,7 +4,8 @@ library("tidyverse")
 library("lubridate")
 #devtools::install_github("gustavobio/tpldata")
 #devtools::install_github("gustavobio/tpl")
-#library("tpl")
+library("tpl")
+library("taxize")
 library("googlesheets")
 
 # Source ITEX (for Site-Elevation comninations)
@@ -130,6 +131,8 @@ traits <- traits %>%
          Genus = ifelse(Genus == "ceratium", "cerastium", Genus),
          Genus = ifelse(Genus == "saxifraga/micranthus", "micranthes", Genus),
          Genus = ifelse(Genus == "stelleria", "stellaria", Genus),
+         Genus = ifelse(Genus == "stelleria", "stellaria", Genus),
+         Genus = ifelse(Genus == "racomitrium", "niphotrichum", Genus), # fixed because of tpl
          Genus = ifelse(Genus == "sanonia", "sanionia", Genus)) %>% 
   
   # Species
@@ -144,7 +147,6 @@ traits <- traits %>%
          Species = ifelse(Genus == "poa" & Species %in% c("arcitca", "arctcia", "arctica_var_vivipara", "arctica/pratensis vivipara"), "arctica", Species),
          Species = ifelse(Genus == "poa" & Species == "arctica/pratensis", "arctica", Species),
          Species = ifelse(Genus == "poa" & Species == "pratensis ssp. alpigena", "pratensis", Species),
-         Species = ifelse(Genus == "micranthes" & Species == "hieraciifolia", "hieracifolia", Species),
          Species = ifelse(Genus == "ranunculus", "sulphureus", Species),
          Species = ifelse(Genus == "salix", "polaris", Species),
          Species = ifelse(Genus == "saxifraga" & Species == "herculus", "hirculus", Species),
@@ -217,6 +219,7 @@ traits2018 <- traits %>%
   # AEB3831 was leaf missing
   mutate(Remark = ifelse(ID %in% c("AWL5310", "BZU8768", "BIE8420", "CUP3093", "BST1760", "BUF9439", "AIO2428", "AVW5412", "AIP2629", "ANW0434", "AEC8296", "AFO1112", "AJI6590", "ALW3077", "AUJ7139", "AUL1863", "AVE0287", "AWU0779", "BJC4868", "BWF1270", "BWZ2813", "CAF5903"), "Missing_leaf_area", Remark)) %>% 
   mutate(Remark = ifelse(ID %in% c("BKO8767"), paste(Remark, "Missing_leaf_area", sep = "; "), Remark))
+
 
 
 ### Calculate Traits and fix wrong trait values
@@ -312,10 +315,28 @@ traitsSV2018 <- traits2018 %>%
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
   
-  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
+  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by) %>% 
+  mutate(Taxon = ifelse(Taxon == "micranthes hieracifolia", "micranthes hieraciifolia", Taxon),
+         Species = ifelse(Species == "hieracifolia", "hieraciifolia", Species))
   
   
-  
+checkTraitNames <- tpl.get(unique(traitsSV2018$Taxon))
+unique(checkTraitNames$note)
+checkTraitNames %>% 
+  filter(note == "replaced synonym|family not in APG")
+
+tnrsCheck <- tnrs(query = unique(traitsSV2018$Taxon), source = "iPlant_TNRS")
+head(tnrsCheck)
+
+# replaced synonym
+#1     Persicaria vivipara replaced synonym      bistorta vivipara
+#2 Alopecurus magellanicus replaced synonym      alopecurus ovatus
+#3       Saxifraga nivalis replaced synonym     micranthes nivalis
+#4   Calamagrostis stricta replaced synonym calamagrostis neglecta, tnrs: Deyeuxia pooides
+#5         Draba oblongata replaced synonym          draba arctica
+#6 Saxifraga hieraciifolia replaced synonym micranthes hieraciifolia
+
+
 
 
 ### Divid into separate data sets
@@ -343,7 +364,6 @@ save(traits2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
 
 
 
-
 # counts
 dim(traits2018) # 1693
 traits2018 %>% distinct(Taxon) # 44 species
@@ -361,9 +381,15 @@ gs_ws_ls(comm)
 #download data
 communityRaw <- gs_read(ss = comm, ws = "DATA") %>% as.tibble()
 
-metaCommunity <- communityRaw %>%
-  select(Day, Site, Elevation, Plot, MedianHeight_cm, Max_height_cm, Vascular, Bryophytes, Lichen_soil, Lichen_rock, Rock, BareGround, BioCrust, Litter, Weather, Elevation_m, PlotSize_cm2, Aspect, Slope_percent, Notes, Entered_by, Collected_by)
-
+metaCommunitySV_2018 <- communityRaw %>%
+  select(Day, Site, Elevation, Plot, MedianHeight_cm, Max_height_cm, Vascular, Bryophytes, Lichen_soil, Lichen_rock, Rock, BareGround, BioCrust, Litter, Weather, PlotSize_cm2, Aspect, Slope_percent, Notes, Entered_by, Collected_by) %>% 
+  filter(!is.na(Site)) %>% # remove empty line
+  mutate(Country = "SV",
+         Year = 2018,
+         Elevation = as.character(Elevation)) %>% 
+  rename(Gradient = Site, Site = Elevation, PlotID = Plot) %>% 
+  left_join(coords, by = c("Site", "Gradient" = "Treatment"))
+save(metaCommunitySV_2018, file = "community/data/metaCommunitySV_2018.Rdata")
 
 # Extra Draba data from Finns
 drabas <- read_xlsx(path = "community/data/DRABAS_2.xlsx")
@@ -377,7 +403,7 @@ drabas <- drabas %>%
   #mutate(Cover_Fertile = "0.1_1")
   
 
-communityRaw1 <- communityRaw %>%
+communitySV_2018 <- communityRaw %>%
   select(-GPS_Nr, -Lat_N, -Long_E, -Scat_species, -MedianHeight_cm, -Max_height_cm, -Vascular, -Bryophytes, -Lichen_soil, -Lichen_rock, -Rock, -BareGround, -BioCrust, -Litter, -Weather, -Elevation_m, -PlotSize_cm2, -Aspect, -Slope_percent, -GPSUnitAccuracy) %>% 
   gather(key = Taxon, value = Cover_Fertile, -Entered_by, -Collected_by, -Day, -Site, -Elevation, -Plot, -Notes) %>% 
   filter(!is.na(Cover_Fertile)) %>% 
@@ -385,7 +411,9 @@ communityRaw1 <- communityRaw %>%
   
   
   # Rename species
-  mutate(Taxon = ifelse(Taxon == "poa alpigena vivipara", "poa arctica_x_pratensis", Taxon)) %>% 
+  mutate(Taxon = ifelse(Taxon == "poa alpigena vivipara", "poa arctica_x_pratensis", Taxon),
+         Taxon = ifelse(Taxon == "cochleria groenlandica", "cochlearia groenlandica", Taxon),
+         Taxon = ifelse(Taxon == "micranthes hieracifolia", "micranthes hieraciifolia", Taxon)) %>% 
   
   # Replace Draba sp1 and sp2 with Julias Draba list
   left_join(drabas, by = c("Site", "Elevation", "Plot")) %>% 
@@ -393,8 +421,16 @@ communityRaw1 <- communityRaw %>%
   
   mutate(Taxon = tolower(Taxon)) %>% 
   mutate(Elevation = as.character(Elevation))
+
+save(communitySV_2018, file = "community/data/communitySV_2018.Rdata")
     
 
+checkCommNames <- tpl.get(unique(communityRaw1$Taxon))
+checkCommNames %>% 
+  filter(note == "was misspelled|replaced synonym") %>% select(name, original.search)
+
+
+
 # Check taxon not in traits or comm.
-setdiff(communityRaw1$Taxon, traits2018$Taxon)
-setdiff(traits2018$Taxon, communityRaw1$Taxon)
+setdiff(communitySV_2018$Taxon, traitsSV2018$Taxon)
+setdiff(traitsSV2018$Taxon, communitySV_2018$Taxon)
