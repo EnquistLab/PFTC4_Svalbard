@@ -13,6 +13,11 @@ source(file = "community/ImportITEX.R")
 pn <- . %>% print(n = Inf)
 
 
+#### COORDINATES ####
+coords <- read_excel(path = "Coordinates.xlsx", col_names = TRUE)
+
+
+
 #### IMPORT TRAIT DATA ####
 
 # Download data from google sheet
@@ -27,7 +32,7 @@ gs_ws_ls(trait)
 traits <- gs_read(ss = trait, ws = "Tabellenblatt1") %>% as.tibble()
 
 
-## DATA CHECKING ##
+#### DATA CHECKING ####
 # Check LeafID
 # Load trait IDs
 load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
@@ -186,7 +191,7 @@ traits <- traits %>%
 #### LEAF AREA ####
 load("traits/data/LeafArea2018.Rdata", verbose = TRUE)
 
-# Check Leaf IDs
+## Check Leaf IDs ##
 setdiff(LeafArea2018$ID, all_codes$hashcode)
 # only Unknown
 
@@ -302,8 +307,12 @@ traitsSV2018 <- traits2018 %>%
          Year = 2018,
          Treatment = "C",
          Date = ymd(paste(Year, 7, Day, sep = "-")),
-         Project = ifelse(Gradient == "X", "X", Project)) %>% 
-  select(Country, Year, Project, Treatment, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
+         Project = ifelse(Gradient == "X", "X", Project)) %>%
+  
+  ### ADD ELEVATION; LATITUDE; LONGITUDE
+  left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
+  
+  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
   
   
   
@@ -320,7 +329,8 @@ save(traits2018, file = "traits/data/traitsGradients_SV_2018.Rdata")
 traitsITEX_SV_2018 <- traitsSV2018 %>%
   filter(Project == "X") %>% 
   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
-  mutate(Treatment = substr(PlotID, 3, 5))
+  mutate(Treatment = substr(PlotID, str_length(PlotID)-2, str_length(PlotID)),
+         PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-"))
 save(traits2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
   
 
@@ -329,7 +339,7 @@ traitsSAXY_SV_2018 <- traitsSV2018 %>%
   filter(Project == "Saxy") %>% 
   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
   mutate(Site = substr(PlotID, 1, 2))
-save(traits2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
+save(traits2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
 
 
 
@@ -358,31 +368,29 @@ metaCommunity <- communityRaw %>%
 # Extra Draba data from Finns
 drabas <- read_xlsx(path = "community/data/DRABAS_2.xlsx")
 drabas <- drabas %>% 
-  gather(key = Taxon, value = occurence, -site, -transect, -plot) %>% 
+  gather(key = Taxon2, value = occurence, -site, -transect, -plot) %>% 
   filter(occurence > 0) %>% 
   rename(Site = site, Elevation = transect, Plot = plot) %>% 
   select(-occurence) %>% 
-  mutate(Entered_by = "Julia", Collected_by = "Julia") %>% 
-  mutate(Cover_Fertile = "0.1_1")
+  #mutate(Entered_by = "Julia", Collected_by = "Julia") %>% 
+  mutate(Taxon2 = ifelse(Taxon2 == "No Drabas", "Cerastium arcticum", Taxon2))
+  #mutate(Cover_Fertile = "0.1_1")
   
 
 communityRaw1 <- communityRaw %>%
   select(-GPS_Nr, -Lat_N, -Long_E, -Scat_species, -MedianHeight_cm, -Max_height_cm, -Vascular, -Bryophytes, -Lichen_soil, -Lichen_rock, -Rock, -BareGround, -BioCrust, -Litter, -Weather, -Elevation_m, -PlotSize_cm2, -Aspect, -Slope_percent, -GPSUnitAccuracy) %>% 
   gather(key = Taxon, value = Cover_Fertile, -Entered_by, -Collected_by, -Day, -Site, -Elevation, -Plot, -Notes) %>% 
   filter(!is.na(Cover_Fertile)) %>% 
-  separate(col = Cover_Fertile, into = c("Cover", "Fertile"), sep = "_")
+  separate(col = Cover_Fertile, into = c("Cover", "Fertile"), sep = "_") %>% 
   
   
   # Rename species
   mutate(Taxon = ifelse(Taxon == "poa alpigena vivipara", "poa arctica_x_pratensis", Taxon)) %>% 
   
-  # Remove Draba sp1 and sp2
-  filter(!Taxon %in% c("Draba sp1", "Draba sp2")) %>% 
-  bind_rows(drabas) %>% 
-  mutate(Taxon = ifelse(Site == "B" & Elevation == 1 & Plot == "E", "Cerastium sp", Taxon)) %>% 
-  # !!! THIS PLOT HAS CERASTIUM ARCTICA, IS NO DRABA ARCTICA? THEN REMOVE THIS LINE
-  mutate(Taxon = ifelse(Site == "C" & Elevation == 5 & Plot == "D", "Cerastium sp", Taxon)) %>% 
-  filter(Taxon != "No Drabas") %>% 
+  # Replace Draba sp1 and sp2 with Julias Draba list
+  left_join(drabas, by = c("Site", "Elevation", "Plot")) %>% 
+  mutate(Taxon = ifelse(Taxon %in% c("Draba sp1", "Draba sp2", "Draba nivalis", "Draba oxycarpa"), Taxon2, Taxon)) %>% 
+  
   mutate(Taxon = tolower(Taxon)) %>% 
   mutate(Elevation = as.character(Elevation))
     
