@@ -17,14 +17,48 @@ bren %>%
   gather(key = plot, value = abundance, - species, -abbreviation) %>% 
   filter(plot== 528, abundance > 0)
 
-dat2 <- read_excel(path = "data/Katrin Bochmuhl altitudinal gradients/Gradienten nach plots sortiert.xls", sheet = "Platåfjellet")
+platafjell <- read_excel(path = "data/Katrin Bochmuhl altitudinal gradients/Gradienten nach plots sortiert.xls", sheet = "Platåfjellet")
 
-dat2 <- dat2 %>% 
+platafjell <- platafjell %>% 
   rename(elevation = `altitude / m`, UTM = `position / UTM`, coordinate = position, veg.cover = `vegetation cover / %`, temperature = `temperature / °C`) %>% 
   fill(plot:coordinate, veg.cover:comment) %>% 
   separate(UTM, into = c("zone", "x", "junk", "y"), sep = " ") %>% 
   select(-junk) %>% 
   mutate(x = as.numeric(x), y = as.numeric(y))
+
+platafjell %>% 
+  filter(abundance != "missing (snow)") %>% 
+  group_by(species) %>% 
+  mutate(n = n()) %>% 
+  filter(n > 2) %>% 
+  filter(species == "Pedicularis hirsuta L.") %>% 
+  ggplot(aes(x = elevation, y = abundance)) +
+  geom_point() +
+  theme(legend.position = 'none')
+
+
+plotCurves <- function(dat){
+  dat %>% 
+    ggplot(aes(x = elevation, y = abundance)) +
+    geom_point() +
+    ggtitle(unique(dat$species)) +
+    ylim(0, 4) +
+    theme(legend.position = 'none')
+}
+
+### Make plots and print PDF
+AbundanceCurves <- platafjell %>% 
+  filter(abundance != "missing (snow)") %>% 
+  mutate(abundance = as.numeric(abundance)) %>% 
+  group_by(species) %>% 
+  mutate(n = n()) %>% 
+  filter(n > 2) %>%  
+  group_by(species) %>% 
+  do(ab.curves = plotCurves(.))
+
+pdf(file = "Curves.pdf")
+AbundanceCurves$ab.curves
+dev.off()
 
 
 # make map
