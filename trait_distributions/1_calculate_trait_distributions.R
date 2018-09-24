@@ -22,12 +22,13 @@ source("trait_distributions/r_functions/trait_distribution_fx.R")
 source("trait_distributions/r_functions/select_traits.R")
 library(dplyr)
 
-load("C:/Users/Brian/Google Drive/PFTC4_Svalbard/USE_THESE_DATA/Traits/traitsGradients_SV_2018 (1).Rdata")
+
+load("C:/Users/Brian/Google Drive/PFTC4_Svalbard/USE_THESE_DATA/Traits/traitsITEX_SV_2018.Rdata")
 traits<-traits2018
 rm(traits2018)
+
 traits$mean_thickness_mm<-rowMeans(traits[c('Leaf_thickness_1_mm','Leaf_thickness_2_mm','Leaf_thickness_3_mm')],na.rm = T)
 traits$wetSLA_cm2_per_g<-traits$Area_cm2/traits$Wet_mass_g
-
 
 #The other files are identical...not sure if this will change?
 #load("C:/Users/Brian/Google Drive/PFTC4_Svalbard/USE_THESE_DATA/Traits/traitsITEX_SV_2018 (1).Rdata")
@@ -64,7 +65,7 @@ for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
   community_i<-itex[which(itex$PlotID==PlotID & itex$Year==Year),]  
   
   traits_i<-select_traits_itex(species = unique(community_i$Taxon),site = Site,plot = PlotID,traits_df = traits)  
-  traits_i<-traits_i[ c("Taxon","Plant_height_cm", "Wet_mass_g","Dry_mass_g","Area_cm2", "mean_thickness_mm","wetSLA_cm2_per_g")]
+  traits_i<-traits_i[ c("Taxon","Plant_height_cm", "Wet_mass_g","Area_cm2", "mean_thickness_mm","wetSLA_cm2_per_g")]
   
   #Trait distribution fx:
   
@@ -87,7 +88,7 @@ for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
     
     trait_t<-names(distribution_i)[[t]]    
     dist_t<-distribution_i[[t]]  
-    write.csv(x = dist_t,file = paste("trait_distributions/itex_distributions/",Site,"_",PlotID,"_",Year,"_",trait_t,".csv",sep = ""),row.names = F)
+    write.csv(x = dist_t,file = paste("trait_distributions/itex_distributions/",Site,".",PlotID,".",Year,".",trait_t,".csv",sep = ""),row.names = F)
     rm(trait_t,dist_t)  
     
   }#t loop
@@ -100,7 +101,7 @@ for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
     
 }#i loop
 
-
+rm(i)
 
 
 
