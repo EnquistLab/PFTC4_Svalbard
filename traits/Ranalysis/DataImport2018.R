@@ -9,7 +9,7 @@ library("taxize")
 library("googlesheets")
 
 # Source ITEX (for Site-Elevation comninations)
-source(file = "community/ImportITEX.R")
+#source(file = "community/ImportITEX.R")
 
 pn <- . %>% print(n = Inf)
 
@@ -343,7 +343,7 @@ head(tnrsCheck)
 # Gradients, Sean and mosses
 traitsGradients_SV_2018 <- traitsSV2018 %>% 
   filter(Project %in% c("T", "Sean", "M"))
-save(traits2018, file = "traits/data/traitsGradients_SV_2018.Rdata")
+save(traitsGradients_SV_2018, file = "traits/data/traitsGradients_SV_2018.Rdata")
 
 
 # ITEX
@@ -352,7 +352,7 @@ traitsITEX_SV_2018 <- traitsSV2018 %>%
   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
   mutate(Treatment = substr(PlotID, str_length(PlotID)-2, str_length(PlotID)),
          PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-"))
-save(traits2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
+save(traitsITEX_SV_2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
   
 
 # Saxy
@@ -360,7 +360,7 @@ traitsSAXY_SV_2018 <- traitsSV2018 %>%
   filter(Project == "Saxy") %>% 
   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
   mutate(Site = substr(PlotID, 1, 2))
-save(traits2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
+save(traitsSAXY_SV_2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
 
 
 
@@ -420,7 +420,17 @@ communitySV_2018 <- communityRaw %>%
   mutate(Taxon = ifelse(Taxon %in% c("Draba sp1", "Draba sp2", "Draba nivalis", "Draba oxycarpa"), Taxon2, Taxon)) %>% 
   
   mutate(Taxon = tolower(Taxon)) %>% 
-  mutate(Elevation = as.character(Elevation))
+  mutate(Elevation = as.character(Elevation)) %>% 
+  mutate(Country = "SV",
+         Year = 2018,
+         Project = "T",
+         Treatment = Site,
+         Gradient = Site,
+         Site = Elevation,
+         PlotID = Plot
+         ) %>% 
+  left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
+  select(Country, Year, Project, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Cover, Fertile, Notes, Collected_by, Entered_by)
 
 save(communitySV_2018, file = "community/data/communitySV_2018.Rdata")
     
