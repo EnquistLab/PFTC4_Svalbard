@@ -388,7 +388,6 @@ metaCommunitySV_2018 <- communityRaw %>%
          Year = 2018,
          Elevation = as.character(Elevation)) %>% 
   rename(Gradient = Site, Site = Elevation, PlotID = Plot) %>% 
-  left_join(coords, by = c("Site", "Gradient" = "Treatment"))
 save(metaCommunitySV_2018, file = "community/data/metaCommunitySV_2018.Rdata")
 
 # Extra Draba data from Finns
