@@ -7,6 +7,8 @@ library("tpl")
 #### Import data ####
 ItexAbundance.raw <- read_excel(path = "community/data/ENDALEN_ALL-YEARS_TraitTrain.xlsx", sheet = "SP-ABUND")
 
+ItexHeight.raw <- read_excel(path = "community/data/ENDALEN_ALL-YEARS_TraitTrain.xlsx", sheet = "HEIGHT")
+
 sp <- read_excel(path = "data/Inga Svala Jonsdottir ITEX/Species lists_Iceland_Svalbard.xlsx", sheet = "Endalen")
 
 coords <- read_excel(path = "Coordinates.xlsx", col_names = TRUE)
@@ -77,6 +79,21 @@ familySV <- checks %>%
   as.tibble() %>% 
   filter(!is.na(family))
 
+
+ItexHeight <- ItexHeight.raw %>% 
+  select(SUBSITE, TREATMENT, PLOT, YEAR, HEIGHT) %>% 
+  rename(Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Year = YEAR) %>% 
+  filter(Site %in% c("DRY-L", "CAS-L", "BIS-L")) %>% 
+  mutate(Site = gsub("-L", "", Site),
+         PlotID = gsub("L", "", PlotID)) %>% 
+  group_by(Year, Site, Treatment, PlotID) %>% 
+  summarise(n = n(), Height_cm = mean(HEIGHT, na.rm = TRUE), se = sd(HEIGHT, na.rm = TRUE)/sqrt(n))
+  
+### HEIGHT WAS CALCULATED DIFFERENT IN 2009 AND 2015 !!!!
+ggplot(ItexHeight, aes(x = as.factor(Year), y = Height_cm, fill = Treatment)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("grey", "red")) +
+  facet_wrap(~ Site)
 
 
 # Calculate species that sum up to 95% cover
