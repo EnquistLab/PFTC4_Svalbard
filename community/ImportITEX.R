@@ -57,7 +57,7 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
          Taxon = ifelse(Taxon == "pedicularis dashyantha", "pedicularis dasyantha", Taxon)) %>% 
   select(-Genus, -Species)
 
-save(CommunityITEX_SV_2015, file = "community/CommunityITEX_SV_2015.Rdata")
+#save(CommunityITEX_SV_2015, file = "community/CommunityITEX_SV_2015.Rdata")
 
 
 ### CHECK SPECIES NAMES ###
@@ -80,6 +80,7 @@ familySV <- checks %>%
   filter(!is.na(family))
 
 
+### ITEX HEIGHT DATA
 ItexHeight <- ItexHeight.raw %>% 
   select(SUBSITE, TREATMENT, PLOT, YEAR, HEIGHT) %>% 
   rename(Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Year = YEAR) %>% 
@@ -89,6 +90,7 @@ ItexHeight <- ItexHeight.raw %>%
   group_by(Year, Site, Treatment, PlotID) %>% 
   summarise(n = n(), Height_cm = mean(HEIGHT, na.rm = TRUE), se = sd(HEIGHT, na.rm = TRUE)/sqrt(n))
   
+
 ### HEIGHT WAS CALCULATED DIFFERENT IN 2009 AND 2015 !!!!
 ggplot(ItexHeight, aes(x = as.factor(Year), y = Height_cm, fill = Treatment)) +
   geom_boxplot() +
@@ -108,8 +110,6 @@ Cover95 <- itex %>%
   count(SP)
 
 
-
-
 field <- itex %>% 
   filter(!GFNARROWarft %in% c("LICHEN", "MOSS", "LIVERWORT")) %>% 
   select(TREATMENT, PLOT, Genus, Species, HITS) %>% 
@@ -123,3 +123,20 @@ itex.codes <- field %>% distinct(TREATMENT, PLOT) %>%
   arrange(Habitat)
   
 #write_csv(field, path = "FieldSheetITEX.csv")
+
+
+### COMMUNITX WEIGHTED MEANS
+load(file = "community/cleaned_data/CommunitySV_ITEX_2003_2015.Rdata", verbose = TRUE)
+traitMean <- readRDS(file = "traits/cleaned_data/community_weighted_means.RDS") %>% 
+  as.tibble() %>% 
+  mutate(mean = as.numeric(as.character(mean)))
+
+# for plotID etc.
+metaItex <- CommunitySV_ITEX_2003_2015 %>% 
+  distinct(Site, Treatment, PlotID)
+
+
+### FLUX DATA
+load(file = "fluxes/Standard_ITEXFluxes.Rdata", verbose = TRUE)
+
+
