@@ -25,7 +25,10 @@ CommResp <- CommunitySV_ITEX_2003_2015 %>%
             propDShrub = sum(Abundance[FunctionalGroup %in% c("dshrub")])/sumAbundance,
             propLichen = sum(Abundance[FunctionalGroup %in% c("lichen")])/sumAbundance,
             propBryo = sum(Abundance[FunctionalGroup %in% c("moss", "liverwort")])/sumAbundance,
-            totalVascular = sum(Abundance[FunctionalGroup %in% c("graminoid", "forbsv", "eshrub", "dshrub")])
+            totalVascular = sum(Abundance[FunctionalGroup %in% c("graminoid", "forbsv", "eshrub", "dshrub")]),
+            totalGraminoid = sum(Abundance[FunctionalGroup %in% c("graminoid")]),
+            totalForb = sum(Abundance[FunctionalGroup %in% c("forbsv")]),
+            totalShrub = sum(Abundance[FunctionalGroup %in% c("eshrub", "dshrub")])
   )
 
 CommResp %>% 
@@ -222,28 +225,74 @@ ggplot(fNMDS, aes(x = PC1, y = PC2, group = PlotID, shape = Treatment, colour = 
 
 
 ### ACROSS YEARS
-ITEX_traits_Years <- traitMean %>% 
+# BIS
+ITEX_traits_Years_BIS <- traitMean %>% 
   spread(key = trait, value = mean) %>% 
-  left_join(metaItex, by = c("Site", "PlotID"))
+  left_join(metaItex, by = c("Site", "PlotID")) %>% 
+  filter(Site == "BIS")
 
-only_traits_Years <- ITEX_traits_Years %>% 
+only_traits_Years_BIS <- ITEX_traits_Years_BIS %>% 
   select(Area_cm2, mean_thickness_mm, Plant_height_cm, Wet_mass_g, wetSLA_cm2_per_g)
 
-pca2 <- rda(only_traits_Years, scale = TRUE)
+pca2_BIS <- rda(only_traits_Years_BIS, scale = TRUE)
 
-screeplot(pca2, bstick = TRUE)
+screeplot(pca2_BIS, bstick = TRUE)
 
-fNMDS <- fortify(pca, axes = 1:4) %>% 
+fNMDS2_BIS <- fortify(pca2_BIS, axes = 1:4) %>% 
   filter(Score == "sites") %>% 
-  bind_cols(ITEX_traits_Years)
+  bind_cols(ITEX_traits_Years_BIS)
 
-ggplot(fNMDS, aes(x = PC1, y = PC2, group = PlotID, shape = Treatment, colour = Site, linetype = Treatment)) +
-  geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
+# CAS
+ITEX_traits_Years_CAS <- traitMean %>% 
+  spread(key = trait, value = mean) %>% 
+  left_join(metaItex, by = c("Site", "PlotID")) %>% 
+  filter(Site == "CAS")
+
+only_traits_Years_CAS <- ITEX_traits_Years_CAS %>% 
+  select(Area_cm2, mean_thickness_mm, Plant_height_cm, Wet_mass_g, wetSLA_cm2_per_g)
+
+pca2_CAS <- rda(only_traits_Years_CAS, scale = TRUE)
+
+screeplot(pca2_CAS, bstick = TRUE)
+
+fNMDS2_CAS <- fortify(pca2_CAS, axes = 1:4) %>% 
+  filter(Score == "sites") %>% 
+  bind_cols(ITEX_traits_Years_CAS)
+
+
+# DRY
+ITEX_traits_Years_DRY <- traitMean %>% 
+  spread(key = trait, value = mean) %>% 
+  left_join(metaItex, by = c("Site", "PlotID")) %>% 
+  filter(Site == "DRY")
+
+only_traits_Years_DRY <- ITEX_traits_Years_DRY %>% 
+  select(Area_cm2, mean_thickness_mm, Plant_height_cm, Wet_mass_g, wetSLA_cm2_per_g)
+
+pca2_DRY <- rda(only_traits_Years_DRY, scale = TRUE)
+
+screeplot(pca2_DRY, bstick = TRUE)
+
+fNMDS2 <- fortify(pca2_DRY, axes = 1:4) %>% 
+  filter(Score == "sites") %>% 
+  bind_cols(ITEX_traits_Years_DRY) %>% 
+  bind_rows(fNMDS2_BIS, fNMDS2_CAS) %>% 
+  mutate(Year2 = as.numeric((Year)),
+         Size = ifelse(Year2 == 1, "First", "Other"))
+
+
+ggplot(fNMDS2, aes(x = PC1, y = PC2, group = PlotID, shape = Treatment, linetype = Treatment)) +
+  geom_point(aes(size = Size)) +
   geom_path() +
   coord_equal() +
   scale_size_discrete(name = "Year", range = c(1.2, 2.5), limits = c("Other", "First"), breaks = c("First", "Other")) +
   scale_shape_manual(values = c(1, 16)) + 
   scale_linetype_manual(values = c("dashed", "solid")) + 
   labs(x = "PC1", y = "PC2") +
+  facet_grid(~ Site) +
   theme_bw()
 
+
+rds_DRY <- rda(only_traits_Years_DRY ~ Treatment * Year, data = ITEX_traits_Years_DRY, scale = TRUE)
+rds_DRY
+autoplot(rds_DRY)
