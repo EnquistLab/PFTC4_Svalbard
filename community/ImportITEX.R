@@ -20,7 +20,20 @@ sp <- sp %>%
   mutate(GFNARROWarft = tolower(GFNARROWarft)) %>% 
   rename(Spp = SPP, FunctionalGroup = GFNARROWarft, Genus = GENUS, Species = SPECIES)
 
+#Import soil moisture data from 2003 and 2004 by plot
+soil_moisture2003 <- read_excel(path = "climate/data/Moisture_july_2003.xlsx", sheet = "Sheet1") %>% 
+  group_by(Plot, Habitat, Treatment) %>% 
+  summarize(soil_moist2003 = mean(Soil1, na.rm = T)) %>% 
+  mutate(PlotID = paste(toupper(substr(Habitat,1,3)), "-", Plot, sep = ""))
+save(soil_moisture2003, file = "climate/data/soil_moisture2003.rdata")
 
+soil_moisture2004 <- read_excel(path = "climate/data/Soil_moisture_2004.xlsx", sheet = "Sheet1") %>% 
+  group_by(Site, Plot) %>% 
+  summarize(soil_moist2004 = mean(moisture, na.rm = T)) %>% 
+  mutate(PlotID = paste(Site, "-", substr(Plot, 2, 3), sep = ""))
+save(soil_moisture2004, file = "climate/data/soil_moisture2004.rdata")
+
+#community data files
 MetaCommunitySV_2003_2015 <- ItexAbundance.raw %>% 
   select(SUBSITE, TREATMENT, PLOT, YEAR, `TOTAL-L`, LITTER, REINDRO, BIRDRO, ROCK, SOIL) %>% 
   rename(Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Year = YEAR, TotalLitter = `TOTAL-L`, Litter = LITTER, ReinDrop = REINDRO, BirdDrop = BIRDRO, Rock = ROCK, Soil = SOIL) %>% 
