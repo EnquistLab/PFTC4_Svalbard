@@ -504,7 +504,7 @@ metaCommunitySV_2018 <- communityRaw %>%
   mutate(Country = "SV",
          Year = 2018,
          Elevation = as.character(Elevation)) %>% 
-  rename(Gradient = Site, Site = Elevation, PlotID = Plot) %>% 
+  rename(Gradient = Site, Site = Elevation, PlotID = Plot)
 save(metaCommunitySV_2018, file = "community/data/metaCommunitySV_2018.Rdata")
 
 # Extra Draba data from Finns
