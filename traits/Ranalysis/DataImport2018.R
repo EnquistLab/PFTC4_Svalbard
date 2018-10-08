@@ -41,6 +41,13 @@ traits_dry_mass <- gs_read(ss = trait_dry_mass, ws = "Tabellenblatt1") %>%
   mutate(Dry_mass_g = gsub(",", "\\.", Dry_mass_g)) %>% 
   mutate(Dry_mass_g = as.numeric(Dry_mass_g))
 
+#check which dry masses are missing from leaves from the sites
+#ITEX
+missing_dry_itex <- traits_dry_mass %>% filter(Site == "X") %>% filter(is.na(Dry_mass_g))
+#Control gradient
+missing_dry_control <- traits_dry_mass %>% filter(Site == "C") %>% filter(is.na(Dry_mass_g))
+#Birdcliff gradient
+missing_dry_birdcliff <- traits_dry_mass %>% filter(Site == "B") %>% filter(is.na(Dry_mass_g))
 
 #### DATA CHECKING ####
 # Check LeafID
