@@ -70,7 +70,7 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
          Taxon = ifelse(Taxon == "pedicularis dashyantha", "pedicularis dasyantha", Taxon)) %>% 
   select(-Genus, -Species)
 
-#save(CommunityITEX_SV_2015, file = "community/CommunityITEX_SV_2015.Rdata")
+save(CommunitySV_ITEX_2003_2015, file = "community/cleaned_data/CommunitySV_ITEX_2003_2015.Rdata")
 
 
 ### CHECK SPECIES NAMES ###

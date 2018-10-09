@@ -2,6 +2,7 @@
 
 #### Create community response dataframe ####
 load("community/cleaned_data/CommResp.Rdata")
+load(file = "community/cleaned_data/CommunitySV_ITEX_2003_2015.Rdata", verbose = TRUE)
 
 #calculate distances between plot community metrics from 2003 to 2015
 metric_plot_dist <- CommResp %>% 
@@ -78,6 +79,16 @@ comm_plot_dist %>%
   geom_point(size = 4)
 
 #### Community mean trait ordination ####
+traitMean <- readRDS(file = "traits/cleaned_data/community_weighted_means.RDS") %>% 
+  as.tibble() %>% 
+  mutate(mean = as.numeric(as.character(mean))) %>% 
+  mutate(Year = as.numeric(as.character(Year)))
+
+traitMean_noitv <- readRDS(file = "traits/cleaned_data/community_weighted_means_no_itv.RDS") %>% 
+  as.tibble() %>% 
+  mutate(mean = as.numeric(as.character(mean)))%>% 
+  mutate(Year = as.numeric(as.character(Year)))
+
 trait_ord <- traitMean %>% 
   spread(key = trait, value = mean)
 
@@ -114,6 +125,8 @@ TraitOrdination <- ggplot(trait_pca_results, aes(x = PC1, y = PC2, group = PlotI
   theme_bw()
 
 #### CWM traits ####
+load("traits/data/traitsITEX_SV_2018.Rdata")
+
 traits_mean_ctl <- traitsITEX_SV_2018 %>% 
   select(Treatment, Taxon, Plant_Height_cm, Dry_Mass_g, Leaf_Area_cm2, Leaf_Thickness_Ave_mm, SLA_cm2_g, LDMC) %>% 
   gather(key = trait, value = value, -Treatment, -Taxon) %>% 
