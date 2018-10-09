@@ -107,8 +107,59 @@ for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
 rm(i)
 
 
+##########################################################################################
+
+#Trait distributions no intraspecific trait variation (e.g. using species means)
+
+source("trait_distributions/r_functions/misc.R")
+
+
+traits_i<-as.data.frame(traits[c("Taxon","Plant_Height_cm","Wet_Mass_g","Dry_Mass_g","Leaf_Thickness_Ave_mm","Leaf_Area_cm2","SLA_cm2_g","LDMC",
+"Wet_Mass_Total_g","Dry_Mass_Total_g","wetSLA_cm2_per_g")    ])
+
+traits_i<-species_trait_means(traits_i)
 
 
 
 
+for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
+  
+  PlotID<-unique(cbind(itex$PlotID,itex$Year))[i,1]
+  Year<-unique(cbind(itex$PlotID,itex$Year))[i,2]
+  Site<-unique(itex$Site[which(itex$PlotID==PlotID)])
+  Treatment<-unique(itex$Treatment[which(itex$PlotID==PlotID)])
+  
+  community_i<-itex[which(itex$PlotID==PlotID & itex$Year==Year),]  
+  
+  #traits_i<-select_traits_itex(species = unique(community_i$Taxon),site = Site,plot = PlotID,traits_df = traits)  
+  
+  
+  
+  #traits_i<-traits_i[c("Taxon","Plant_Height_cm","Wet_Mass_g","Dry_Mass_g","Leaf_Thickness_Ave_mm","Leaf_Area_cm2","SLA_cm2_g","LDMC",
+  #                     "Wet_Mass_Total_g","Dry_Mass_Total_g","wetSLA_cm2_per_g")    ]
+
+  #Make distributions
+  distribution_i<-trait_distributions(number_replicates = 200,
+                                      abundance_data = cbind(community_i$Taxon,community_i$Abundance),
+                                      trait_data = traits_i)  
+  
+  #Write distributions to files
+  for(t in 1:length(distribution_i)){
+    
+    trait_t<-names(distribution_i)[[t]]    
+    dist_t<-distribution_i[[t]]  
+    write.csv(x = dist_t,file = paste("trait_distributions/itex_distributins_no_itv/",Site,".",PlotID,".",Year,".",trait_t,".csv",sep = ""),row.names = F)
+    rm(trait_t,dist_t)  
+    
+  }#t loop
+  
+  rm(PlotID,Site,t,Treatment,Year,distribution_i,community_i)
+  
+  
+  
+  print(paste(round(i/nrow(unique(cbind(itex$PlotID,itex$Year)))*100,digits = 2), " percent done",sep = ""))
+  
+}#i loop
+
+rm(i,traits_i)
 
