@@ -24,11 +24,10 @@ library(dplyr)
 
 
 load("C:/Users/Brian/Google Drive/PFTC4_Svalbard/USE_THESE_DATA/Traits/traitsITEX_SV_2018.Rdata")
-traits<-traits2018
-rm(traits2018)
+traits<-traitsITEX_SV_2018
+rm(traitsITEX_SV_2018)
 
-traits$mean_thickness_mm<-rowMeans(traits[c('Leaf_thickness_1_mm','Leaf_thickness_2_mm','Leaf_thickness_3_mm')],na.rm = T)
-traits$wetSLA_cm2_per_g<-traits$Area_cm2/traits$Wet_mass_g
+traits$wetSLA_cm2_per_g<-traits$Leaf_Area_cm2/traits$Wet_Mass_g
 
 #The other files are identical...not sure if this will change?
 #load("C:/Users/Brian/Google Drive/PFTC4_Svalbard/USE_THESE_DATA/Traits/traitsITEX_SV_2018 (1).Rdata")
@@ -65,7 +64,11 @@ for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
   community_i<-itex[which(itex$PlotID==PlotID & itex$Year==Year),]  
   
   traits_i<-select_traits_itex(species = unique(community_i$Taxon),site = Site,plot = PlotID,traits_df = traits)  
-  traits_i<-traits_i[ c("Taxon","Plant_height_cm", "Wet_mass_g","Area_cm2", "mean_thickness_mm","wetSLA_cm2_per_g")]
+  traits_i<-traits_i[c("Taxon","Plant_Height_cm","Wet_Mass_g","Dry_Mass_g","Leaf_Thickness_Ave_mm","Leaf_Area_cm2","SLA_cm2_g","LDMC",
+                       "Wet_Mass_Total_g","Dry_Mass_Total_g","wetSLA_cm2_per_g")    ]
+
+  
+  
   
   #Trait distribution fx:
   

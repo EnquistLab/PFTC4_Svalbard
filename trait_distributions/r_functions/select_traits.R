@@ -16,7 +16,7 @@ for( i in 1:length(species)){
 
 traits_i<-NULL
 
-traits_i<-traits[which(traits$Taxon==species[i] & traits$Plot==plot),]  
+traits_i<-traits[which(traits$Taxon==species[i] & traits$PlotID==plot),]  
     
 if(nrow(traits_i)==0){traits_i<-traits[which(traits$Taxon==species[i] & traits$Site==site),]  }
   
