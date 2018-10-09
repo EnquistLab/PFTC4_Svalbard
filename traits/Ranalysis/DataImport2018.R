@@ -49,7 +49,7 @@ missing_dry_control <- traits_dry_mass %>% filter(Site == "C") %>% filter(is.na(
 #Birdcliff gradient
 missing_dry_birdcliff <- traits_dry_mass %>% filter(Site == "B") %>% filter(is.na(Dry_mass_g))
 
-#### DATA CHECKING ####
+ #### DATA CHECKING ####
 # Check LeafID
 # Load trait IDs
 load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
@@ -466,7 +466,8 @@ head(tnrsCheck)
 ### Divid into separate data sets
 # Gradients, Sean and mosses
 traitsGradients_SV_2018 <- traitsSV2018 %>% 
-  filter(Project %in% c("T", "Sean", "M"))
+  filter(Project %in% c("T", "Sean", "M")) %>% 
+  filter(SLA_cm2_g < 500, LDMC < 1)
 save(traitsGradients_SV_2018, file = "traits/data/traitsGradients_SV_2018.Rdata")
 
 
@@ -475,7 +476,8 @@ traitsITEX_SV_2018 <- traitsSV2018 %>%
   filter(Project == "X") %>% 
   #select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
   mutate(Treatment = substr(PlotID, str_length(PlotID)-2, str_length(PlotID)),
-         PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-"))
+         PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-")) %>% 
+  filter(SLA_cm2_g < 500, LDMC < 1)
 save(traitsITEX_SV_2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
   
 
@@ -483,7 +485,8 @@ save(traitsITEX_SV_2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
 traitsSAXY_SV_2018 <- traitsSV2018 %>%
   filter(Project == "Saxy") %>% 
   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
-  mutate(Site = substr(PlotID, 1, 2))
+  mutate(Site = substr(PlotID, 1, 2)) %>% 
+  filter(SLA_cm2_g < 500, LDMC < 1)
 save(traitsSAXY_SV_2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
 
 
