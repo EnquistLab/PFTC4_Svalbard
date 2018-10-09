@@ -70,7 +70,7 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
          Taxon = ifelse(Taxon == "pedicularis dashyantha", "pedicularis dasyantha", Taxon)) %>% 
   select(-Genus, -Species)
 
-#save(CommunityITEX_SV_2015, file = "community/CommunityITEX_SV_2015.Rdata")
+save(CommunitySV_ITEX_2003_2015, file = "community/cleaned_data/CommunitySV_ITEX_2003_2015.Rdata")
 
 
 ### CHECK SPECIES NAMES ###
@@ -142,7 +142,13 @@ itex.codes <- field %>% distinct(TREATMENT, PLOT) %>%
 load(file = "community/cleaned_data/CommunitySV_ITEX_2003_2015.Rdata", verbose = TRUE)
 traitMean <- readRDS(file = "traits/cleaned_data/community_weighted_means.RDS") %>% 
   as.tibble() %>% 
-  mutate(mean = as.numeric(as.character(mean)))
+  mutate(mean = as.numeric(as.character(mean))) %>% 
+  mutate(Year = as.numeric(as.character(Year)))
+
+traitMean_noitv <- readRDS(file = "traits/cleaned_data/community_weighted_means_no_itv.RDS") %>% 
+  as.tibble() %>% 
+  mutate(mean = as.numeric(as.character(mean)))%>% 
+  mutate(Year = as.numeric(as.character(Year)))
 
 # for plotID etc.
 metaItex <- CommunitySV_ITEX_2003_2015 %>% 
