@@ -166,19 +166,24 @@ CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, s
 load("climate/data/soil_moisture2003.rdata")
 load("climate/data/soil_moisture2004.rdata")
 comm_plot_dist <- fNMDS %>%
-  filter(Year != 2009) %>% 
+  #filter(Year != 2009) %>% 
   group_by(Treatment, PlotID, Site) %>% 
-  summarize(diff1 = diff(NMDS1), diff2 = diff(NMDS2)) %>% 
+  mutate(diff1 = NMDS1 - lag(NMDS1), diff2 = NMDS2 - lag(NMDS2)) %>% 
   mutate(dist = sqrt(diff1^2 + diff2^2)) %>% 
   left_join(soil_moisture2003, by = "PlotID") %>% 
   left_join(soil_moisture2004, by = "PlotID")
 
 
-comm_plot_dist %>% 
-  ggplot(aes(x = soil_moist, y = dist, color = Treatment.x, shape = Site.x)) +
+comm_plot_dist %>% filter(Year != 2003) %>% 
+  ggplot(aes(x = as.factor(Year), y = dist, color = Treatment.x, group = PlotID)) +
   geom_abline(slope = 0,intercept = 0) +
-  geom_point(size = 4) +
-  scale_color_manual(values = c("black", "red"))
+  geom_point() +
+  geom_path() +
+  scale_color_manual(values = c("black", "red")) +
+  facet_wrap(~Site.x) +
+  ylab("Euclidian Distance") +
+  xlab("Year")
+  
 
 
 comm_plot_dist %>% 
@@ -188,19 +193,24 @@ comm_plot_dist %>%
 
 #calculate distances between plot community metrics from 2003 to 2015
 metric_plot_dist <- CommResp %>% 
-  filter(Year != 2009) %>% 
+  #filter(Year != 2009) %>% 
   gather(key = response, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
   group_by(Treatment, PlotID, Site, response) %>% 
-  summarize(dist = diff(value))%>% 
+  mutate(dist = value - lag(value))%>% 
   left_join(soil_moisture2003, by = "PlotID") %>% 
-  left_join(soil_moisture2004, by = "PlotID")
+  left_join(soil_moisture2004, by = "PlotID") %>% 
+  filter(response == "Richness" | response == "Diversity" | response == "Evenness" | response == "sumAbundance" | response == "totalGraminoid" | response == "totalForb" | response == "totalShrub" | response == "propLichen" | response == "propBryo")
 
 metric_plot_dist %>% 
-  ggplot(aes(x = Site.x, y = dist, fill = Treatment.x)) +
+  filter(Year != 2003) %>% 
+  ggplot(aes(x = as.factor(Year), y = dist, color = Treatment.x, group = PlotID)) +
   geom_abline(slope = 0,intercept = 0) +
-  geom_boxplot() +
-  scale_fill_manual(values = c("black", "red")) +
-  facet_wrap(~response, scales = "free")
+  geom_point() +
+  geom_path() +
+  scale_color_manual(values = c("black", "red")) +
+  facet_grid(response ~ Site.x, scales = "free") +
+  ylab("Change in Metric") +
+  xlab("Year")
 
 metric_plot_dist %>% 
   ggplot(aes(x = soil_moist, y = dist, color = Treatment.x)) +
@@ -225,6 +235,60 @@ traitMean %>%
   scale_fill_manual(values = c("grey", "red")) +
   labs(y = "Trait mean", x = "") +
   facet_grid(trait ~ Site, scales = "free_y")
+
+itex_treat <- ItexHeight %>% ungroup() %>% select(Treatment, PlotID)
+
+comm_trait_dist <- traitMean %>% 
+  #filter(Year != 2009) %>% 
+  group_by(Site, PlotID, trait) %>% 
+  mutate(dist = mean - lag(mean)) %>% 
+  left_join(itex_treat)
+
+comm_trait_dist %>% filter(Year != 2003) %>% 
+  ggplot(aes(x = as.factor(Year), y = dist, color = Treatment, group = PlotID)) +
+  geom_point() +
+  geom_path() +
+  geom_abline(slope = 0, intercept = 0) +
+  facet_grid(trait ~ Site, scales = "free") +
+  scale_color_manual(values = c("black", "red")) +
+  ylab("Change in mean trait value") +
+  xlab("Year")
+
+# community trait mean ordination
+trait_ord <- traitMean %>% 
+  spread(key = trait, value = mean)
+
+trait_pca <- prcomp(trait_ord[,c(4:8)], center = T, scale. = T)
+trait_pca_results <- cbind(trait_ord, scores(trait_pca))
+
+trait_pca_results <- trait_pca_results %>% 
+  group_by(PlotID, Site) %>% 
+  mutate(diff1 = PC1 - lag(PC1), diff2 = PC2 - lag(PC2)) %>% 
+  mutate(dist = sqrt(diff1^2 + diff2^2)) %>% 
+  left_join(soil_moisture2003, by = "PlotID") %>% 
+  left_join(soil_moisture2004, by = "PlotID") %>% 
+  left_join(itex_treat)
+
+trait_pca_results %>% filter(Year != 2003) %>% 
+  ggplot(aes(x = as.factor(Year), y = dist, color = Treatment, group = PlotID)) +
+  geom_abline(slope = 0,intercept = 0) +
+  geom_point() +
+  geom_path() +
+  scale_color_manual(values = c("black", "red")) +
+  facet_wrap(~Site.x) +
+  ylab("Euclidian distance \n(trait space)") +
+  xlab("Year")
+
+TraitOrdination <- ggplot(trait_pca_results, aes(x = PC1, y = PC2, group = PlotID, shape = Treatment, linetype = Treatment)) +
+  geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
+  geom_path() + 
+  coord_equal() +
+  scale_size_discrete(name = "Year", range = c(1.2, 2.5), limits = c("Other", "First"), breaks = c("First", "Other")) +
+  scale_shape_manual(values = c(1, 16)) + 
+  scale_linetype_manual(values = c("dashed", "solid")) + 
+  labs(x = "NMDS axis 1", y = "NMDS axis 2") +
+  facet_grid(~ Site.x) +
+  theme_bw()
 
 
 
