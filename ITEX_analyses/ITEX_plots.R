@@ -1,4 +1,4 @@
-
+#Note, you need to run much of the ImportITEX.R script and CommunityAnalysis.R script to get several of the important input dataframes
 
 #### Create community response dataframe ####
 load("community/cleaned_data/CommResp.Rdata")
@@ -158,7 +158,7 @@ cas_abundance <- CommunitySV_ITEX_2003_2015 %>%
   select(rel_abundance, PlotID, Year)
 
 cwm_itex %>% filter(!is.na(trait)) %>% #left_join(cas_abundance) %>% 
-  ggplot(aes(x = cwm_itv, y = cwm_ctl, color = Treatment)) +
+  ggplot(aes(x = cwm_ctl, y = cwm_noitv, color = Site)) +
   geom_point() +
   geom_abline(slope = 1, intercept = 0) +
   facet_wrap(~trait, scales = "free")
