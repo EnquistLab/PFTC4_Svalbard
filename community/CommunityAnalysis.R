@@ -128,7 +128,7 @@ comm_fat_CAS <- CommunitySV_ITEX_2003_2015 %>%
 
 comm_fat_spp_CAS <- comm_fat_CAS %>% select(-(Site:Year))
 
-NMDS_CAS <- metaMDS(comm_fat_spp_CAS, noshare = TRUE, try = 30)
+NMDS_CAS <- metaMDS(comm_fat_spp_CAS, noshare = TRUE, try = 100)
 
 fNMDS_CAS <- fortify(NMDS_CAS) %>% 
   filter(Score == "sites") %>% 
@@ -144,7 +144,7 @@ comm_fat_DRY <- CommunitySV_ITEX_2003_2015 %>%
 
 comm_fat_spp_DRY <- comm_fat_DRY %>% select(-(Site:Year))
 
-NMDS_DRY <- metaMDS(comm_fat_spp_DRY, noshare = TRUE, try = 30)
+NMDS_DRY <- metaMDS(comm_fat_spp_DRY, noshare = TRUE, try = 100)
 
 fNMDS <- fortify(NMDS_DRY) %>% 
   filter(Score == "sites") %>% 
@@ -161,6 +161,58 @@ CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, s
   labs(x = "NMDS axis 1", y = "NMDS axis 2") +
   facet_grid(~ Site) +
   theme_bw()
+
+#calcuate distances between plot NMDS locations from 2003 to 2015
+load("climate/data/soil_moisture2003.rdata")
+load("climate/data/soil_moisture2004.rdata")
+comm_plot_dist <- fNMDS %>%
+  filter(Year != 2009) %>% 
+  group_by(Treatment, PlotID, Site) %>% 
+  summarize(diff1 = diff(NMDS1), diff2 = diff(NMDS2)) %>% 
+  mutate(dist = sqrt(diff1^2 + diff2^2)) %>% 
+  left_join(soil_moisture2003, by = "PlotID") %>% 
+  left_join(soil_moisture2004, by = "PlotID")
+
+
+comm_plot_dist %>% 
+  ggplot(aes(x = soil_moist, y = dist, color = Treatment.x, shape = Site.x)) +
+  geom_abline(slope = 0,intercept = 0) +
+  geom_point(size = 4) +
+  scale_color_manual(values = c("black", "red"))
+
+
+comm_plot_dist %>% 
+  ggplot(aes(x = soil_moist, y = dist, color = Site.x)) +
+  geom_abline(slope = 0,intercept = 0) +
+  geom_point(size = 4)
+
+#calculate distances between plot community metrics from 2003 to 2015
+metric_plot_dist <- CommResp %>% 
+  filter(Year != 2009) %>% 
+  gather(key = response, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
+  group_by(Treatment, PlotID, Site, response) %>% 
+  summarize(dist = diff(value))%>% 
+  left_join(soil_moisture2003, by = "PlotID") %>% 
+  left_join(soil_moisture2004, by = "PlotID")
+
+metric_plot_dist %>% 
+  ggplot(aes(x = Site.x, y = dist, fill = Treatment.x)) +
+  geom_abline(slope = 0,intercept = 0) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("black", "red")) +
+  facet_wrap(~response, scales = "free")
+
+metric_plot_dist %>% 
+  ggplot(aes(x = soil_moist, y = dist, color = Treatment.x)) +
+  geom_abline(slope = 0,intercept = 0) +
+  geom_point() +
+  stat_smooth(method = "lm") +
+  scale_color_manual(values = c("black", "red")) +
+  facet_wrap(~response, scales = "free")
+
+metric_plot_dist %>% 
+  ggplot(aes(x = soil_moist, y = soil_moist2003)) +
+  geom_point()
 
 
 
