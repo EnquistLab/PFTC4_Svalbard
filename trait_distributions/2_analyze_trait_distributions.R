@@ -6,8 +6,16 @@ source("trait_distributions/r_functions/summarize_moments.R")
 
 #Extract the trait moments from the distributions
 itex_moments<-extract_moments_itex(file_directory = "trait_distributions/itex_distributions/")
-
 saveRDS(object = itex_moments[c(1:4,6)],file = "trait_distributions/community_weighted_means.RDS")
+saveRDS(object = itex_moments[c(1:4,6)],file = "C:/Users/Brian/Google Drive/PFTC4_Svalbard/trait_distribution_output/community_weighted_means.RDS")
+saveRDS(object = itex_moments,file = "C:/Users/Brian/Google Drive/PFTC4_Svalbard/trait_distribution_output/community_weighted_moments.RDS")
+
+
+itex_moments_no_itv<-extract_moments_itex(file_directory = "trait_distributions/itex_distributins_no_itv/")
+saveRDS(object = itex_moments_no_itv[c(1:4,6)],file = "trait_distributions/community_weighted_means_no_itv.RDS")
+saveRDS(object = itex_moments_no_itv[c(1:4,6)],file = "C:/Users/Brian/Google Drive/PFTC4_Svalbard/trait_distribution_output/community_weighted_means_no_itv.RDS")
+saveRDS(object = itex_moments_no_itv,file = "C:/Users/Brian/Google Drive/PFTC4_Svalbard/trait_distribution_output/community_weighted_moments_no_itv.RDS")
+
 
 itex_moments<-merge(x = itex_moments,y = unique(itex[c('PlotID','Treatment')]),by="PlotID")
 itex_moments$Year<-as.numeric(as.character(itex_moments$Year))
