@@ -114,9 +114,12 @@ rm(i)
 source("trait_distributions/r_functions/misc.R")
 
 
+
+
 traits_i<-as.data.frame(traits[c("Taxon","Plant_Height_cm","Wet_Mass_g","Dry_Mass_g","Leaf_Thickness_Ave_mm","Leaf_Area_cm2","SLA_cm2_g","LDMC",
 "Wet_Mass_Total_g","Dry_Mass_Total_g","wetSLA_cm2_per_g")    ])
 
+traits_i<-traits_i[which(traits$Treatment=="CTL"),]
 traits_i<-species_trait_means(traits_i)
 
 
