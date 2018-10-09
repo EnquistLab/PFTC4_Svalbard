@@ -6,41 +6,43 @@ load(file = "community/cleaned_data/CommunitySV_ITEX_2003_2015.Rdata", verbose =
 
 #calculate distances between plot community metrics from 2003 to 2015
 metric_plot_dist <- CommResp %>% 
-  #filter(Year != 2009) %>% 
+  filter(Year != 2009) %>% 
   gather(key = response, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
   group_by(Treatment, PlotID, Site, response) %>% 
-  mutate(dist = value - lag(value))%>% 
+  summarize(dist = diff(value))%>% 
   left_join(soil_moisture2003, by = "PlotID") %>% 
   left_join(soil_moisture2004, by = "PlotID") %>% 
   filter(response == "Richness" | response == "Diversity" | response == "Evenness" | response == "sumAbundance" | response == "totalGraminoid" | response == "totalForb" | response == "totalShrub" | response == "propLichen" | response == "propBryo")
 
+#Plot of change from beginning to end in community metrics by habitat type
 metric_plot_dist %>% 
-  filter(Year != 2003) %>% 
-  ggplot(aes(x = as.factor(Year), y = dist, color = Treatment.x, group = PlotID)) +
+  #filter(Year != 2003) %>% 
+  ggplot(aes(x = Site.x, y = dist, fill = Treatment.x)) +
   geom_abline(slope = 0,intercept = 0) +
-  geom_point() +
-  geom_path() +
-  scale_color_manual(values = c("black", "red")) +
-  facet_grid(response ~ Site.x, scales = "free") +
+  geom_boxplot() +
+  scale_fill_manual(values = c("gray", "red")) +
+  facet_wrap(~response, scales = "free") +
   ylab("Change in Metric") +
-  xlab("Year")
+  xlab("Habitat Type") +
+  theme(text = element_text(size = 20))
 
+#plot of change from beginning to end in community metrics by soil moisture
 metric_plot_dist %>% 
   ggplot(aes(x = soil_moist, y = dist, color = Treatment.x)) +
   geom_abline(slope = 0,intercept = 0) +
   geom_point() +
   stat_smooth(method = "lm") +
   scale_color_manual(values = c("black", "red")) +
-  facet_wrap(~response, scales = "free")
-
-metric_plot_dist %>% 
-  ggplot(aes(x = soil_moist, y = soil_moist2003)) +
-  geom_point()
+  facet_wrap(~response, scales = "free") +
+  ylab("Change in Metric") +
+  xlab("Soil Moisture") +
+  theme(text = element_text(size = 20))
 
 
 #### Add community ordination data ####
 load("community/cleaned_data/fNMDS.Rdata")
 
+#Auds NMDS plot
 CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, shape = Treatment, linetype = Treatment)) +
   geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
   geom_path() + 
@@ -56,25 +58,25 @@ CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, s
 load("climate/data/soil_moisture2003.rdata")
 load("climate/data/soil_moisture2004.rdata")
 comm_plot_dist <- fNMDS %>%
-  #filter(Year != 2009) %>% 
+  filter(Year != 2009) %>% 
   group_by(Treatment, PlotID, Site) %>% 
-  mutate(diff1 = NMDS1 - lag(NMDS1), diff2 = NMDS2 - lag(NMDS2)) %>% 
+  summarize(diff1 = diff(NMDS1), diff2 = diff(NMDS2)) %>% 
   mutate(dist = sqrt(diff1^2 + diff2^2)) %>% 
   left_join(soil_moisture2003, by = "PlotID") %>% 
   left_join(soil_moisture2004, by = "PlotID")
 
-comm_plot_dist %>% filter(Year != 2003) %>% 
-  ggplot(aes(x = as.factor(Year), y = dist, color = Treatment.x, group = PlotID)) +
+#plot of change in multivariate position based on community composition
+comm_plot_dist %>% 
+  ggplot(aes(x = Site.x, y = dist, fill = Treatment.x)) +
   geom_abline(slope = 0,intercept = 0) +
-  geom_point() +
-  geom_path() +
-  scale_color_manual(values = c("black", "red")) +
-  facet_wrap(~Site.x) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("gray", "red")) +
   ylab("Euclidian Distance") +
-  xlab("Year")
+  xlab("Habitat Type") +
+  theme(text = element_text(size = 20))
 
 comm_plot_dist %>% 
-  ggplot(aes(x = soil_moist, y = dist, color = Site.x)) +
+  ggplot(aes(x = soil_moist, y = dist, color = Treatment.x)) +
   geom_abline(slope = 0,intercept = 0) +
   geom_point(size = 4)
 
@@ -86,32 +88,32 @@ traitMean <- readRDS(file = "traits/cleaned_data/community_weighted_means.RDS") 
 
 traitMean_noitv <- readRDS(file = "traits/cleaned_data/community_weighted_means_no_itv.RDS") %>% 
   as.tibble() %>% 
-  mutate(mean = as.numeric(as.character(mean)))%>% 
+  mutate(mean = as.numeric(as.character(mean))) %>% 
   mutate(Year = as.numeric(as.character(Year)))
 
 trait_ord <- traitMean %>% 
   spread(key = trait, value = mean)
 
 trait_pca <- prcomp(trait_ord[,c(4:8)], center = T, scale. = T)
-trait_pca_results <- cbind(trait_ord, scores(trait_pca))
+trait_pca_results <- cbind(trait_ord, scores(trait_pca)) %>% left_join(metaItex)
 
-trait_pca_results <- trait_pca_results %>% 
+trait_pca_results1 <- trait_pca_results %>% 
+  filter(Year != 2009) %>% 
   group_by(PlotID, Site) %>% 
-  mutate(diff1 = PC1 - lag(PC1), diff2 = PC2 - lag(PC2)) %>% 
+  summarize(diff1 = diff(PC1), diff2 = diff(PC2)) %>% 
   mutate(dist = sqrt(diff1^2 + diff2^2)) %>% 
   left_join(soil_moisture2003, by = "PlotID") %>% 
   left_join(soil_moisture2004, by = "PlotID") %>% 
   left_join(itex_treat)
 
-trait_pca_results %>% filter(Year != 2003) %>% 
-  ggplot(aes(x = as.factor(Year), y = dist, color = Treatment, group = PlotID)) +
+trait_pca_results1 %>% 
+  ggplot(aes(x = Site.x, y = dist, fill = Treatment)) +
   geom_abline(slope = 0,intercept = 0) +
-  geom_point() +
-  geom_path() +
-  scale_color_manual(values = c("black", "red")) +
-  facet_wrap(~Site.x) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("gray", "red")) +
   ylab("Euclidian distance \n(trait space)") +
-  xlab("Year")
+  xlab("Habitat Type") +
+  theme(text = element_text(size = 20))
 
 TraitOrdination <- ggplot(trait_pca_results, aes(x = PC1, y = PC2, group = PlotID, shape = Treatment, linetype = Treatment)) +
   geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
@@ -120,10 +122,12 @@ TraitOrdination <- ggplot(trait_pca_results, aes(x = PC1, y = PC2, group = PlotI
   scale_size_discrete(name = "Year", range = c(1.2, 2.5), limits = c("Other", "First"), breaks = c("First", "Other")) +
   scale_shape_manual(values = c(1, 16)) + 
   scale_linetype_manual(values = c("dashed", "solid")) + 
-  labs(x = "NMDS axis 1", y = "NMDS axis 2") +
-  facet_grid(~ Site.x) +
+  labs(x = "PC1", y = "PC2") +
+  facet_wrap(~ Site) +
   theme_bw()
 
+library(ggpubr)
+ggarrange(CommunityOrdination, TraitOrdination, nrow = 2, common.legend = T)
 #### CWM traits ####
 load("traits/data/traitsITEX_SV_2018.Rdata")
 
