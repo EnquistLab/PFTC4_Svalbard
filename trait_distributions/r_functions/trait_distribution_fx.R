@@ -29,7 +29,7 @@ trait_distributions<-function(number_replicates, abundance_data, trait_data){
         trait_ti<-as.data.frame(trait_ti)
         
         #Dont do anything if there's no trait data
-        if(nrow(trait_ti)!=0){rep_n<-c(rep_n,sample(x = trait_ti[,1],size = abund_i,replace = T))}
+        if(nrow(trait_ti)!=0){rep_n<-c(rep_n,resample(x = trait_ti[,1],size = abund_i,replace = T))}
         
       }# i abundance loop
       
@@ -47,3 +47,6 @@ trait_distributions<-function(number_replicates, abundance_data, trait_data){
 }# trait_distribution function
 
 #################################################
+
+
+resample <- function(x, ...) x[sample.int(length(x), ...)]

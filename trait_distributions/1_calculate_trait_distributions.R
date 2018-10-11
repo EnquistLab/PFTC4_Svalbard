@@ -29,6 +29,9 @@ rm(traitsITEX_SV_2018)
 
 traits$wetSLA_cm2_per_g<-traits$Leaf_Area_cm2/traits$Wet_Mass_g
 
+traits<-traits[which(traits$Taxon!="equisetum arvense" &  traits$Taxon!="equisetum scirpoides"),]
+
+
 #The other files are identical...not sure if this will change?
 #load("C:/Users/Brian/Google Drive/PFTC4_Svalbard/USE_THESE_DATA/Traits/traitsITEX_SV_2018 (1).Rdata")
 #load("C:/Users/Brian/Google Drive/PFTC4_Svalbard/USE_THESE_DATA/Traits/traitsSAXY_SV_2018 (1).Rdata")
@@ -85,7 +88,8 @@ for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
   distribution_i<-trait_distributions(number_replicates = 200,
                                       abundance_data = cbind(community_i$Taxon,community_i$Abundance),
                                       trait_data = traits_i)  
-
+  
+  
   #Write distributions to files
   for(t in 1:length(distribution_i)){
     
@@ -120,10 +124,11 @@ traits_i<-as.data.frame(traits[c("Taxon","Plant_Height_cm","Wet_Mass_g","Dry_Mas
 "Wet_Mass_Total_g","Dry_Mass_Total_g","wetSLA_cm2_per_g")    ])
 
 traits_i<-traits_i[which(traits$Treatment=="CTL"),]
-traits_i<-species_trait_means(traits_i)
+traits<-traits[which(traits$Taxon!="equisetum arvense" &  traits$Taxon!="equisetum scirpoides"),]
+traits_i<-species_trait_means(trait_data_frame = traits_i)
 
-
-
+library(dplyr)
+library(tidyverse)
 
 for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
   
@@ -145,6 +150,10 @@ for( i in 1:nrow(unique(cbind(itex$PlotID,itex$Year)))){
   distribution_i<-trait_distributions(number_replicates = 200,
                                       abundance_data = cbind(community_i$Taxon,community_i$Abundance),
                                       trait_data = traits_i)  
+  
+  
+  
+  
   
   #Write distributions to files
   for(t in 1:length(distribution_i)){
