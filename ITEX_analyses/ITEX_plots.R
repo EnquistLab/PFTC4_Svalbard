@@ -14,10 +14,21 @@ metric_plot_dist <- CommResp %>%
   gather(key = response, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
   group_by(Treatment, PlotID, Site, response) %>% 
   summarize(dist = diff(value))%>% 
-  left_join(soil_moisture2003, by = "PlotID") %>% 
+  #left_join(soil_moisture2003, by = "PlotID") %>% 
   left_join(soil_moisture2004, by = "PlotID") %>% 
   filter(response == "Richness" | response == "Diversity" | response == "Evenness" | response == "sumAbundance" | response == "totalGraminoid" | response == "totalForb" | response == "totalShrub" | response == "propLichen" | response == "propBryo") %>% 
-  left_join(soil_moisture2004, by = "PlotID")
+  left_join(soil_moisture2004, by = "PlotID") %>% 
+  left_join(tpi, by = "PlotID")
+
+metric_plot_dist %>% 
+  ggplot(aes(x = soil_moist2004.x, y = dist, color = Site.x)) +
+  geom_point(size = 2) +
+  geom_abline(slope = 0, intercept = 0) +
+  facet_wrap(~response, scales = "free")
+
+metric_plot_dist %>% 
+  ggplot(aes(x = X_mean, y = soil_moist2004.x, color = Site.x)) +
+  geom_point(size = 2)
 
 #Plot of change from beginning to end in community metrics by habitat type
 metric_plot_dist %>% 
@@ -66,6 +77,10 @@ metric_plot_dist %>%
   theme(text = element_text(size = 20)) +
   scale_fill_manual(values = c("grey", "red"))
 
+metric_aov <- metric_plot_dist %>% 
+  group_by(response) %>% 
+  do(metric_aov = aov(dist ~ Treatment*Site.x, data = .))
+
 
 #### Add community ordination data ####
 load("community/cleaned_data/fNMDS.Rdata")
@@ -94,6 +109,9 @@ CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, s
 #calcuate distances between plot NMDS locations from 2003 to 2015
 load("climate/data/soil_moisture2003.rdata")
 load("climate/data/soil_moisture2004.rdata")
+tpi <- read.csv("climate/data/twiFull.csv") %>% 
+  mutate(PlotID = paste(habitat, id, sep = "-"))
+  
 comm_plot_dist <- fNMDS %>%
   filter(Year != 2009) %>% 
   group_by(Treatment, PlotID, Site) %>% 
@@ -101,6 +119,8 @@ comm_plot_dist <- fNMDS %>%
   mutate(dist = sqrt(diff1^2 + diff2^2)) %>% 
   left_join(soil_moisture2003, by = "PlotID") %>% 
   left_join(soil_moisture2004, by = "PlotID")
+
+comm_plot_dist_test <- aov(dist ~ Treatment.x * Site.x, data = comm_plot_dist)
 
 #plot of change in multivariate position based on community composition
 comm_plot_dist %>% 
@@ -128,11 +148,12 @@ traitMean_noitv <- readRDS(file = "traits/cleaned_data/community_weighted_means_
   mutate(mean = as.numeric(as.character(mean))) %>% 
   mutate(Year = as.numeric(as.character(Year)))
 
-trait_ord <- traitMean %>% 
-  spread(key = trait, value = mean)
+trait_ord <- traitMean %>% select(-mean_noitv) %>% 
+  spread(key = Trait, value = mean) %>% 
+  select(-PC1, -PC2, -PC3)
 
-trait_pca <- prcomp(trait_ord[,c(4:8)], center = T, scale. = T)
-trait_pca_results <- cbind(trait_ord, scores(trait_pca)) %>% left_join(metaItex)
+trait_pca <- prcomp(trait_ord[,c(5:9)], center = T, scale. = T)
+trait_pca_results <- cbind(trait_ord, trait_pca$x) %>% left_join(metaItex)
 
 trait_pca_results1 <- trait_pca_results %>% 
   filter(Year != 2009) %>% 
@@ -319,16 +340,17 @@ traitMean %>% filter(Year == 2015) %>% filter(trait == "Dry_Mass_g" | trait == "
 
 library(cati)
 
-test <- traitMean %>% filter(trait == "Leaf_Area_cm2") %>% filter(Year == 2015)
+source("ITEX_analyses/inter_intra_anova.R")
+test <- traitMean %>% filter(Trait == "PC3") %>% filter(Year == 2015)
 
-test <- traitMean %>% select(-mean_noitv, -diff, -prop_diff) %>% spread(key = trait, value = mean) %>% filter(Year == 2015)
+#test <- traitMean %>% select(-mean_noitv, -diff, -prop_diff) %>% spread(key = trait, value = mean) %>% filter(Year == 2015)
   
-aov_test <- trait.flex.anova(~Treatment*Site, mean, mean_noitv, data = test)
+aov_test <- trait.flex.anova(~1, mean, mean_noitv, data = test)
 aov_test
-plot(aov_test, use.percentage = T, legend.pos="none", main = "LeafArea")
+plot(aov_test, use.percentage = T, legend.pos="none", main = "PC3")
 
 
-decompCTRE(test, formula = ~Treatment*Site)
+
 
 traitMean %>% filter(trait == "Plant_Height_cm", Year == "2015") %>% 
   ggplot(aes(x = Site, y = mean, fill = Treatment)) +
@@ -339,13 +361,22 @@ traitMean %>% filter(trait == "Plant_Height_cm", Year == "2015") %>%
 test <- traitsITEX_SV_2018 %>% 
   select(Treatment, Taxon, Plant_Height_cm, Dry_Mass_g, Leaf_Area_cm2, Leaf_Thickness_Ave_mm, SLA_cm2_g, LDMC) %>% 
   gather(key = trait, value = value, -Treatment, -Taxon) %>% 
-  filter(Treatment == "CTL") %>% 
-  filter(trait == "Leaf_Thickness_Ave_mm")
+  group_by(trait) %>% 
+  do(out = varcomp(lme(value~1, random=~1|Taxon, data=., na.action = na.omit), 1))
 
+varpart_test <- as.data.frame(rbind(unlist(test[[2]][1]), unlist(test[[2]][2]), unlist(test[[2]][3]), unlist(test[[2]][4]), unlist(test[[2]][5]), unlist(test[[2]][6])))
+varpart_test$Trait <- c("Dry_Mass_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "Plant_Height_cm", "SLA_cm2_g")
 
-varpartLA <- varcomp(lme(value~1, random=~1|Taxon, data=test, na.action = na.omit), 1)
-varpartSLA <- varcomp(lme(value~1, random=~1|Taxon, data=test, na.action = na.omit), 1)
-varpartLDMC <- varcomp(lme(value~1, random=~1|Taxon, data=test, na.action = na.omit), 1)
-varpartdm <- varcomp(lme(value~1, random=~1|Taxon, data=test, na.action = na.omit), 1)
-varpartLT <- varcomp(lme(value~1, random=~1|Taxon, data=test, na.action = na.omit), 1)
-varpartPH <- varcomp(lme(value~1, random=~1|Taxon, data=test, na.action = na.omit), 1)
+varpart_test %>% 
+  gather(key = level, value = Percent.variance.100, -Trait) %>% 
+ggplot(aes(x = Trait, y = Percent.variance.100, fill = level)) + 
+  geom_bar(stat="identity") + 
+  labs(y = "Percent variance" , fill="Level") + 
+  scale_fill_manual(values=c("#003366", "#0066CC")) + 
+  theme_bw() + 
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        strip.text = element_text(size = 8))

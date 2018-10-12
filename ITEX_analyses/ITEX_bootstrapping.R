@@ -74,11 +74,10 @@ LogTranformation <- function(dat){
 # WITH BOOTSTRAPPING
 CWM_Bootstrapping <- function(dat, nrep = 100, samplesize = 200){
   comm <- dat$community %>% 
-    filter(!Abundance == 0) %>% 
     group_by(Year, Site, PlotID) %>% 
     mutate(sumAbundance = sum(Abundance))
   
-  trait <- dat$trait_trans %>% filter(!is.na(Value))
+  trait <- dat$trait_trans 
   
   TraitWeights_plot <- comm %>% 
     left_join(trait, by = c("Site", "PlotID", "Taxon")) %>% 
@@ -108,10 +107,12 @@ CWM_Bootstrapping <- function(dat, nrep = 100, samplesize = 200){
     filter(!is.na(Value)) %>% 
     group_by(Year, Site, PlotID, Trait, Taxon) %>% 
     filter(level == min(level)) %>% 
-    group_by(Year, Site, PlotID, Trait)
+    ungroup() %>% 
+    group_by(Year, Site, PlotID, Trait) %>% 
+    filter(!Abundance == 0)
+    
   
-  
-  BootstrapMoments <- rerun(.n = nrep, sample_n(TraitWeights_all, size = samplesize,  replace = TRUE, weight = TraitWeights_all$weight)) %>%
+  BootstrapMoments <- rerun(.n = nrep, sample_n(TraitWeights_all, size = samplesize,  replace = TRUE, weight = weight)) %>%
     bind_rows(.id = "n") %>% 
     group_by(n, add = TRUE) %>% 
     # get all the happy moments
@@ -119,7 +120,6 @@ CWM_Bootstrapping <- function(dat, nrep = 100, samplesize = 200){
   
   return(BootstrapMoments)
 }
-
 
 
 TraitWeights_all %>% 
