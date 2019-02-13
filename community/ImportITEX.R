@@ -104,6 +104,7 @@ ItexHeight <- ItexHeight.raw %>%
   summarise(n = n(), Height_cm = mean(HEIGHT, na.rm = TRUE), se = sd(HEIGHT, na.rm = TRUE)/sqrt(n))
   
 
+
 ### HEIGHT WAS CALCULATED DIFFERENT IN 2009 AND 2015 !!!!
 ggplot(ItexHeight, aes(x = as.factor(Year), y = Height_cm, fill = Treatment)) +
   geom_boxplot() +
