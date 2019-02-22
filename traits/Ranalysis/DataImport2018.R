@@ -482,7 +482,11 @@ cnp <- cnp %>%
          ID = gsub("CBO1253", "CBO1251", ID),
          ID = gsub("CCE6413", "CCE6411", ID),
          ID = gsub("BPG0976", "BPG0974", ID),
-         ID = gsub("BTJ3153", "BTJ3155", ID))
+         ID = gsub("BTJ3153", "BTJ3155", ID)) %>% 
+  mutate_all(funs(gsub("REPEAT", NA, .))) %>% 
+  mutate_all(funs(gsub("Not Enough Sample", NA, .)))
+
+
 
 # Check IDs
 setdiff(cnp$ID, all_codes$hashcode)
