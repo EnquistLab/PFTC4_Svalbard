@@ -37,9 +37,15 @@ trait_dry_mass <- gs_title("LeafTrait_Svalbard (1)")
 gs_ws_ls(trait_dry_mass)
 traits_dry_mass <- gs_read(ss = trait_dry_mass, ws = "Tabellenblatt1") %>% 
   as.tibble() %>% 
-# select(ID, Dry_mass_g) %>% 
+  #select(ID, Dry_mass_g) %>% 
   mutate(Dry_mass_g = gsub(",", "\\.", Dry_mass_g)) %>% 
   mutate(Dry_mass_g = as.numeric(Dry_mass_g))
+
+# 263 missing envelopes (NEED TO BE JOINED LATER!!!!)
+traits_missing <- gs_read(ss = trait_dry_mass, ws = "Tabellenblatt2") %>% 
+  as.tibble() %>% 
+  select(ID, Wet_mass_g, Dry_mass_g)
+
 
 #check which dry masses are missing from leaves from the sites
 #ITEX
@@ -312,7 +318,9 @@ traits_dry_mass <- traits_dry_mass %>%
 
 #join original trait datasheet with the dry mass datasheet
 traits_dry_mass1 <- traits_dry_mass %>% select(ID, Dry_mass_g)
-traits <- traits %>% left_join(traits_dry_mass1)
+traits <- traits %>% 
+  full_join(traits_dry_mass1)
+  
 
 #### LEAF AREA ####
 load("traits/data/LeafArea2018.Rdata", verbose = TRUE)
