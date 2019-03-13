@@ -580,7 +580,6 @@ communitySV_2018 <- communityRaw %>%
   filter(!is.na(Cover_Fertile)) %>% 
   separate(col = Cover_Fertile, into = c("Cover", "Fertile"), sep = "_") %>% 
   
-  
   # Rename species
   mutate(Taxon = ifelse(Taxon == "poa alpigena vivipara", "poa arctica_x_pratensis", Taxon),
          Taxon = ifelse(Taxon == "cochleria groenlandica", "cochlearia groenlandica", Taxon),
@@ -601,7 +600,17 @@ communitySV_2018 <- communityRaw %>%
          PlotID = Plot
          ) %>% 
   left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
-  select(Country, Year, Project, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Cover, Fertile, Notes, Collected_by, Entered_by)
+  select(Country, Year, Project, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Cover, Fertile, Notes, Collected_by, Entered_by) %>% 
+  
+  #filter(!is.na(Cover), !Cover == 0) %>% 
+  group_by(Country, Year, Site, Gradient, PlotID, Taxon, Cover) %>% 
+  mutate(n = n()) %>% 
+  # remove duplicates that are identical
+  slice(1) %>% 
+  # remove  duplicate where cover is not identical
+  filter(!(Gradient == "C" & Site == "5" & PlotID == "D" & Taxon == "cerastium arcticum" & Cover == 0.1)) %>% 
+  ungroup() %>% 
+  mutate(Cover = ifelse(Project == "T" & Site == "2" & Gradient == "C" & PlotID == "B" & Taxon == "oxyria digyna", 0.1, Cover))
 
 save(communitySV_2018, file = "community/data/communitySV_2018.Rdata")
     
