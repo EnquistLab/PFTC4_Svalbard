@@ -7,6 +7,8 @@ library("lubridate")
 library("tpl")
 library("taxize")
 library("googlesheets")
+install.packages("PFTCFunctions")
+library("PFTCFunctions")
 
 # Source ITEX (for Site-Elevation comninations)
 #source(file = "community/ImportITEX.R")
@@ -23,39 +25,38 @@ coords <- read_excel(path = "Coordinates.xlsx", col_names = TRUE)
 
 # Download data from google sheet
 
-# Check which tables you have access to
-gs_ls()
-# which google sheets do you have access to?
-trait <- gs_title("LeafTrait_Svalbard")
-# list worksheets
-gs_ws_ls(trait)
-#download data
-traits <- gs_read(ss = trait, ws = "Tabellenblatt1") %>% as.tibble() %>% select(-Dry_mass_g)
+# # Check which tables you have access to
+# gs_ls()
+# # which google sheets do you have access to?
+# trait <- gs_title("LeafTrait_Svalbard")
+# # list worksheets
+# gs_ws_ls(trait)
+# #download data
+# traits <- gs_read(ss = trait, ws = "Tabellenblatt1") %>% as.tibble() %>% select(-Dry_mass_g)
+# 
+# #import datasheet with dry masses entered
+# trait_dry_mass <- gs_title("LeafTrait_Svalbard (1)")
+# gs_ws_ls(trait_dry_mass)
+# traits_dry_mass <- gs_read(ss = trait_dry_mass, ws = "Tabellenblatt1") %>% 
+#   as.tibble() %>% 
+#   #select(ID, Dry_mass_g) %>% 
+#   mutate(Dry_mass_g = gsub(",", "\\.", Dry_mass_g)) %>% 
+#   mutate(Dry_mass_g = as.numeric(Dry_mass_g))
 
-#import datasheet with dry masses entered
-trait_dry_mass <- gs_title("LeafTrait_Svalbard (1)")
-gs_ws_ls(trait_dry_mass)
-traits_dry_mass <- gs_read(ss = trait_dry_mass, ws = "Tabellenblatt1") %>% 
-  as.tibble() %>% 
-  #select(ID, Dry_mass_g) %>% 
-  mutate(Dry_mass_g = gsub(",", "\\.", Dry_mass_g)) %>% 
-  mutate(Dry_mass_g = as.numeric(Dry_mass_g))
-
-# 263 missing envelopes (NEED TO BE JOINED LATER!!!!)
-traits_missing <- gs_read(ss = trait_dry_mass, ws = "Tabellenblatt2") %>% 
-  as.tibble() %>% 
-  select(ID, Wet_mass_g, Dry_mass_g)
+# Read in data
+traits <- read_csv(file = "traits/data/LeafTrait_Svalbard_with_DM.csv")
 
 
 #check which dry masses are missing from leaves from the sites
-#ITEX
-missing_dry_itex <- traits_dry_mass %>% filter(Site == "X") %>% filter(is.na(Dry_mass_g))
-#Control gradient
-missing_dry_control <- traits_dry_mass %>% filter(Site == "C") %>% filter(is.na(Dry_mass_g))
-#Birdcliff gradient
-missing_dry_birdcliff <- traits_dry_mass %>% filter(Site == "B") %>% filter(is.na(Dry_mass_g))
+#ITEX - 14
+missing_dry_itex <- traits %>% filter(Site == "X") %>% filter(is.na(Dry_mass_g))
+#Control gradient - 5
+missing_dry_control <- traits %>% filter(Site == "C") %>% filter(is.na(Dry_mass_g))
+#Birdcliff gradient - 4
+missing_dry_birdcliff <- traits %>% filter(Site == "B") %>% filter(is.na(Dry_mass_g))
 
- #### DATA CHECKING ####
+####################################################################################################
+#### DATA CHECKING ####
 # Check LeafID
 # Load trait IDs
 load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
@@ -112,134 +113,34 @@ itex.codes %>% pn
 # ALI6553: assumed Plot 5-OTC because only 2 ind form this plot and LeafID fits
 # AJL5589: change from OTC to CTL. 5-OTC does not exist and only 2 leaves from 5-CTL
 # ALO7062: Plot name was 2 and changed to 2-CTL
+####################################################################################################
 
-
+#### FIX DATA ####
 traits <- traits %>% 
   # Fix leafID
   mutate(ID = recode(ID, "CIG85099" = "CIG8509",
                      "CHF3’094" = "CHF3094")) %>% 
   
-  mutate(ID = gsub("BMT5974", "BTM5974", ID),#
+  mutate(ID = gsub("BMT5974", "BTM5974", ID),
          ID = gsub("AZL0848", "BZL0848", ID),
-         ID = gsub("BHS6740", "BHS6704", ID), #
+         ID = gsub("BHS6740", "BHS6704", ID),
          ID = gsub("BAH7471", "BAH7571", ID),
-         ID = gsub("BDP43249", "BDP4329", ID),#
-         ID = gsub("BUS0605", "BSU0605", ID),#
-         ID = gsub("ADX3335", "ADK3335", ID),#
-         ID = gsub("BTK0192", "BTK0182", ID),#
+         ID = gsub("BDP43249", "BDP4329", ID),
+         ID = gsub("BUS0605", "BSU0605", ID),
+         ID = gsub("ADX3335", "ADK3335", ID),
+         ID = gsub("BTK0192", "BTK0182", ID),
          ID = gsub("BJG192", "BJG7192", ID),
-         ID = gsub("ACV501", "ACV0501", ID),#
-         ID = gsub("AJJ5071", "AJJ5061", ID),#
+         ID = gsub("ACV501", "ACV0501", ID),
+         ID = gsub("AJJ5071", "AJJ5061", ID),
          ID = gsub("AXX2436", "AAX2436", ID),
          ID = gsub("AWW8078", "AAW8078", ID),
          ID = gsub("AYP7268", "AYP7286", ID),
          ID = gsub("AQQ9548", "AQQ9458", ID),
-         ID = gsub("CHF3’094", "CHF3094", ID),#
-         ID = gsub("CIG850", "CIG8509", ID),#
+         ID = gsub("CHF3’094", "CHF3094", ID),
+         ID = gsub("CIG850", "CIG8509", ID),
          ID = gsub("CMP9385", "CMP9835", ID),
          ID = gsub("CIG85099", "CIG8509", ID)) %>% 
-  
-  #mutate(Date = dmy(paste(Day, "07-2018", sep = "-"))) %>% 
-  mutate(Site = ifelse(Site == "x", "X", Site)) %>% 
-  mutate(Site = ifelse(ID == "BWS2352", "X", Site)) %>% 
-  mutate(Elevation = toupper(Elevation)) %>% 
-  mutate(Elevation = ifelse(Elevation %in% c("3 OR 4", "3 - 4"), "3-4", Elevation)) %>% 
-  mutate(Elevation = ifelse(ID == "BSE3271", 2, Elevation)) %>% 
-  mutate(Project = ifelse(Project == "X", "T", Project)) %>% 
-  
-  # Correct species names
-  # Genus
-  mutate(Genus = tolower(Genus), Species = tolower(Species)) %>% 
-  mutate(Genus = ifelse(Genus == "oxyra", "oxyria", Genus),
-         Genus = ifelse(Genus == "bistota", "bistorta", Genus),
-         Genus = ifelse(Genus == "equisteum", "equisetum", Genus),
-         Genus = ifelse(Genus == "michranthes", "micranthes", Genus),
-         Genus = ifelse(Genus == "ceratium", "cerastium", Genus),
-         Genus = ifelse(Genus == "saxifraga/micranthus", "micranthes", Genus),
-         Genus = ifelse(Genus == "stelleria", "stellaria", Genus),
-         Genus = ifelse(Genus == "stelleria", "stellaria", Genus),
-         Genus = ifelse(Genus == "racomitrium", "niphotrichum", Genus), # fixed because of tpl
-         Genus = ifelse(Genus == "sanonia", "sanionia", Genus)) %>% 
-  
-  # Species
-  mutate(Species = ifelse(Genus == "alopecurus", "ovatus", Species),
-         Species = ifelse(Genus == "bistorta", "vivipara", Species),
-         Species = ifelse(Genus == "cassiope", "tetragona", Species),
-         Species = ifelse(Genus == "cerastium", "arcticum", Species),
-         Species = ifelse(Genus == "equisteum", "equisetum", Species),
-         ### poas
-         Species = ifelse(Genus == "festuca" & Species == "vivipara", "viviparoidea", Species),
-         Species = ifelse(Genus == "festuca" & Species %in% c("rubra_ssp_richardsonii", "rubra_spp_richardsonii"), "rubra", Species),
-         Species = ifelse(Genus == "poa" & Species %in% c("arcitca", "arctcia", "arctica_var_vivipara", "arctica/pratensis vivipara"), "arctica", Species),
-         Species = ifelse(Genus == "poa" & Species == "arctica/pratensis", "arctica", Species),
-         Species = ifelse(Genus == "poa" & Species == "pratensis ssp. alpigena", "pratensis", Species),
-         Species = ifelse(Genus == "ranunculus", "sulphureus", Species),
-         Species = ifelse(Genus == "salix", "polaris", Species),
-         Species = ifelse(Genus == "saxifraga" & Species == "herculus", "hirculus", Species),
-         Species = ifelse(Genus == "saxifraga" & Species == "cernus", "cernua", Species),
-         Species = ifelse(Genus == "saxifraga" & Species == "sernua", "cernua", Species),
-         Species = ifelse(Genus == "saxifraga" & Species == "cerua", "cernua", Species),
-         Species = ifelse(Genus == "saxifraga" & Species == "oppostifolia", "oppositifolia", Species),
-         Species = ifelse(Genus == "aulacomnium" & Species == "turgidium", "turgidum", Species),
-         Species = ifelse(Genus == "sanionia" & Species == "uni", "uncinata", Species)) %>% 
-  
-  # Fix wrong species
-  mutate(Genus = ifelse(ID == "BAR1151", "salix", Genus)) %>% # typed in wrong, right on envelop
-  mutate(Species = ifelse(ID == "BAR1151", "polaris", Species)) %>% 
-  
-  # Fix and check plot names
-  mutate(Plot = gsub("_", "-", Plot)) %>% 
-  mutate(Plot = ifelse(Plot == "L-1-CLT", "L-1-CTL", Plot)) %>% 
-  mutate(Plot = ifelse(ID == "BDJ7423", "L-8-CTL", Plot)) %>% 
-  mutate(Plot = ifelse(ID == "BTL8005", "L-1-CTL", Plot)) %>% 
-  mutate(Plot = ifelse(ID %in% c("BHG2119", "BJH1430", "BJG7192"), "F", Plot)) %>% 
-  mutate(Remark = ifelse(ID %in% c("BHG2119", "BJH1430", "BJG7192"), "assumed this is Plot F", Remark)) %>% 
-  mutate(Plot = ifelse(ID == "CAV5132", "A", Plot)) %>% 
-  mutate(Remark = ifelse(ID == "CAV5132", "assumed Plot A; Ind_nr_missing; height_missing", Remark)) %>%
-  mutate(Plot = ifelse(ID == "ADH9312", "C", Plot)) %>% 
-  mutate(Remark = ifelse(ID == "ADH9312", "assumed Plot C", Remark)) %>%
-  mutate(Plot = ifelse(ID == "ALI6553", "L-5-OTC", Plot)) %>% 
-  mutate(Remark = ifelse(ID == "ALI6553", "assumed Plot 5-OTC", Remark)) %>%
-  mutate(Plot = ifelse(ID == "AJL5589", "L-5-CTL", Plot)) %>% 
-  mutate(Remark = ifelse(ID == "AJL5589", "changed to Plot 5-CTL", Remark)) %>%
-  mutate(Plot = ifelse(ID == "ALO7062", "L-2-CTL", Plot)) %>% 
-  mutate(Remark = ifelse(ID == "ALO7062", "was 2 and changed to 2-CTL", Remark)) %>%
-  mutate(Plot = ifelse(ID == "BVN8783", "L-5-CTL", Plot)) %>% # fix wrong name L5-CTL
-  
-  # Project
-  mutate(Project = ifelse(ID == "AHE5823", "T", Project)) %>% 
-  
-  # Remove L- from Plot name for ITEX plants
-  mutate(Plot = ifelse(Site == "X", substr(Plot, 3, nchar(Plot)), Plot)) %>% 
-  
-  mutate(Taxon = paste(Genus, Species, sep = " "))
 
-#fix dry mass trait dataset
-traits_dry_mass <- traits_dry_mass %>% 
-  # Fix leafID
-  mutate(ID = recode(ID, "CIG85099" = "CIG8509",
-                     "CHF3’094" = "CHF3094")) %>% 
-  
-  mutate(ID = gsub("BMT5974", "BTM5974", ID),#
-         ID = gsub("AZL0848", "BZL0848", ID),
-         ID = gsub("BHS6740", "BHS6704", ID), #
-         ID = gsub("BAH7471", "BAH7571", ID),
-         ID = gsub("BDP43249", "BDP4329", ID),#
-         ID = gsub("BUS0605", "BSU0605", ID),#
-         ID = gsub("ADX3335", "ADK3335", ID),#
-         ID = gsub("BTK0192", "BTK0182", ID),#
-         ID = gsub("BJG192", "BJG7192", ID),
-         ID = gsub("ACV501", "ACV0501", ID),#
-         ID = gsub("AJJ5071", "AJJ5061", ID),#
-         ID = gsub("AXX2436", "AAX2436", ID),
-         ID = gsub("AWW8078", "AAW8078", ID),
-         ID = gsub("AYP7268", "AYP7286", ID),
-         ID = gsub("AQQ9548", "AQQ9458", ID),
-         ID = gsub("CHF3’094", "CHF3094", ID),#
-         ID = gsub("CIG850", "CIG8509", ID),#
-         ID = gsub("CMP9385", "CMP9835", ID),
-         ID = gsub("CIG85099", "CIG8509", ID)) %>% 
-  
   #mutate(Date = dmy(paste(Day, "07-2018", sep = "-"))) %>% 
   mutate(Site = ifelse(Site == "x", "X", Site)) %>% 
   mutate(Site = ifelse(ID == "BWS2352", "X", Site)) %>% 
@@ -316,25 +217,21 @@ traits_dry_mass <- traits_dry_mass %>%
   mutate(Taxon = paste(Genus, Species, sep = " "))
 
 
-#join original trait datasheet with the dry mass datasheet
-traits_dry_mass1 <- traits_dry_mass %>% select(ID, Dry_mass_g)
-traits <- traits %>% 
-  full_join(traits_dry_mass1)
-  
 
 #### LEAF AREA ####
 load("traits/data/LeafArea2018.Rdata", verbose = TRUE)
 
-## Check Leaf IDs ##
+## Check if Leaf IDs are valid ##
 setdiff(LeafArea2018$ID, all_codes$hashcode)
 # only Unknown
 
 # check how many ID do not join with trait data
 setdiff(LeafArea2018$ID, traits$ID)
 # Do not fit with any traits and cannot find out which leaf it is:
-#"ATH9996" "BVK6301"  "CRZ2953" "Unknown"
+#"ATH9996", "Unknown"
 
-traits2018 %>% 
+# 24 leaves that have no scan
+traits %>% 
   anti_join(LeafArea2018, by = "ID") %>% 
   filter(Project != "M") %>% 
   select(ID, Day, Site, Elevation, Genus, Species, Plot, Bulk_nr_leaves, Remark) %>% arrange(ID) %>% pn
@@ -345,12 +242,12 @@ traits2018 <- traits %>%
   left_join(LeafArea2018, by = "ID") %>% 
   mutate(Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% 
   mutate(NrLeaves = ifelse(is.na(Bulk_nr_leaves), NumberLeavesScan, Bulk_nr_leaves)) %>% 
-  
+
   # Mark 24 leaves with missing area
   # For some leaf area checkbox was not checked
   # AEB3831 was leaf missing
   mutate(Remark = ifelse(ID %in% c("AWL5310", "BZU8768", "BIE8420", "CUP3093", "BST1760", "BUF9439", "AIO2428", "AVW5412", "AIP2629", "ANW0434", "AEC8296", "AFO1112", "AJI6590", "ALW3077", "AUJ7139", "AUL1863", "AVE0287", "AWU0779", "BJC4868", "BWF1270", "BWZ2813", "CAF5903"), "Missing_leaf_area", Remark)) %>% 
-  mutate(Remark = ifelse(ID %in% c("BKO8767"), paste(Remark, "Missing_leaf_area", sep = "; "), Remark))
+  mutate(Remark = ifelse(ID %in% c("BKO8767"), paste(Remark, "Missing_leaf_area", sep = "_"), Remark))
 
 
 
@@ -372,6 +269,7 @@ traitsSV2018 <- traits2018 %>%
          Wet_Mass_g = ifelse(ID == "ASL0771", 0.0884, Wet_Mass_g),
          Wet_Mass_g = ifelse(ID == "APX3945", 0.0351, Wet_Mass_g),
          Wet_Mass_g = ifelse(ID == "ADC9307", 0.067, Wet_Mass_g),
+         Wet_Mass_g = ifelse(ID == "AWZ0728", 0.0725, Wet_Mass_g),
          Remark = ifelse(ID == "ADC9307", "Wet mass 0.607g is clearly wrong; assume it must be 0.067", Remark),
          Wet_Mass_g = ifelse(ID == "BWU3122", 0.0655, Wet_Mass_g),
          Remark = ifelse(ID == "BWU3122", "Wet mass 0.6655g is clearly wrong; assume it must be 0.0655", Remark),
@@ -389,12 +287,18 @@ traitsSV2018 <- traits2018 %>%
          Remark = ifelse(ID == "CCD9457", "Wet mass 0.985g is clearly wrong; assume it must be 0.0985", Remark)) %>% 
   mutate(Remark = ifelse(ID %in% c("AHC5738", "AHA7548", "AGY5197", "BTZ1755"), "tiny_leaf", Remark)) %>% 
   
+  # Fix Dry_Mass
+  mutate(Dry_Mass_g = ifelse(ID == "AUP7141", 0.011, Dry_Mass_g),
+         Dry_Mass_g = ifelse(ID == "AGD0525", 0.0066, Dry_Mass_g),
+         Dry_Mass_g = ifelse(ID == "AKI3166", 0.012, Dry_Mass_g),
+         Dry_Mass_g = ifelse(ID == "AEA5561", 0.023, Dry_Mass_g),) %>% 
+  
   # Replace Area and Thickness with AQL4331, because leaf was mixed after scannig, deltet AQL4331, because leaf was lost
   mutate(Leaf_Area_cm2 = ifelse(ID == "AEB3831", 2.804, Leaf_Area_cm2),
          Leaf_Thickness_1_mm = ifelse(ID == "AEB3831", 0.0161, Leaf_Thickness_1_mm),
          Leaf_Thickness_2_mm = ifelse(ID == "AEB3831", 0.236, Leaf_Thickness_2_mm),
          Leaf_Thickness_3_mm = ifelse(ID == "AEB3831", 0.194, Leaf_Thickness_3_mm)) %>% 
-  filter(ID != "AQL4331") %>% 
+  filter(ID != "AQL4331") %>%
   
   # fix wrong leaf numbers
   mutate(NrLeaves = ifelse(ID == "BCX3331", 14, NrLeaves),
@@ -409,7 +313,7 @@ traitsSV2018 <- traits2018 %>%
   
   # Equisetum does not need leaf number = > Leaf nr = 1 because of calculations below
   mutate(NrLeaves = ifelse(Genus == "equisetum", 1, NrLeaves)) %>% 
-  
+
   # Calculate values on the leaf level (mostly bulk samples)
   rename(Wet_Mass_Total_g = Wet_Mass_g,
          Dry_Mass_Total_g = Dry_Mass_g,
@@ -418,12 +322,18 @@ traitsSV2018 <- traits2018 %>%
          Dry_Mass_g = Dry_Mass_Total_g / NrLeaves,
          Leaf_Area_cm2 = Leaf_Area_Total_cm2 / NrLeaves) %>% 
   
+  # Fix BMN6819
+  # Only one leaf in the bag; wet weight probably 6 leaves, dry weight will be only one leaf
+  # Nees multiplying by 6, becaue leaf nr has been changed to 1
+  mutate(Wet_Mass_g = if_else(ID == "BMN6819", Wet_Mass_g / 6, Wet_Mass_g)) %>% 
+  
   # Calculate SLA, LMDC
   mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
          SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
-         LDMC = Dry_Mass_g / Wet_Mass_g,
-         # Measures for the mosses
-         Length_1_cm = is.numeric(Length_1_cm),
+         LDMC = Dry_Mass_g / Wet_Mass_g) %>% 
+
+  # Measures for the mosses
+  mutate(Length_1_cm = is.numeric(Length_1_cm),
          Length_2_cm = is.numeric(Length_2_cm),
          Length_3_cm = is.numeric(Length_3_cm),
          GreenLength_1_cm = is.numeric(GreenLength_1_cm),
@@ -436,8 +346,6 @@ traitsSV2018 <- traits2018 %>%
   
   # Make data speak to other PFTC data
   rename(Gradient = Site, Site = Elevation, PlotID = Plot, Data_entered_by = Person_data_entered, Comment = Remark) %>% 
-  # join Coords and Elevation
-  # ...
     mutate(Country = "SV",
          Year = 2018,
          Treatment = "C",
@@ -451,6 +359,14 @@ traitsSV2018 <- traits2018 %>%
   mutate(Taxon = ifelse(Taxon == "micranthes hieracifolia", "micranthes hieraciifolia", Taxon),
          Species = ifelse(Species == "hieracifolia", "hieraciifolia", Species))
   
+
+
+traitsSV2018 %>% filter(SLA_cm2_g > 500) %>% select(ID, Project, Gradient, Site, PlotID, Taxon, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_cm2, SLA_cm2_g, Comment)
+traitsSV2018 %>% filter(Gradient == "X", Taxon == "festuca rubra") %>% select(ID, Wet_Mass_Total_g, Dry_Mass_Total_g, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2)
+
+traitsSV2018 %>% filter(ID %in% c("AAQ4039")) %>% select(ID, Wet_Mass_Total_g, Dry_Mass_Total_g, Wet_Mass_g, Dry_Mass_g, Bulk_nr_leaves, NrLeaves, NumberLeavesScan)
+
+
   
 checkTraitNames <- tpl.get(unique(traitsSV2018$Taxon))
 unique(checkTraitNames$note)
@@ -469,7 +385,7 @@ head(tnrsCheck)
 #6 Saxifraga hieraciifolia replaced synonym micranthes hieraciifolia
 
 
-# Add chemical traits
+#### Chemical Traits ####
 cnp <- read_excel(path = "traits/data/Norway_CNP_2019_021419.xls")
 
 cnp <- cnp %>% 
