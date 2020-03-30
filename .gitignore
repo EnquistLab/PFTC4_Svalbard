@@ -57,7 +57,8 @@ vignettes/*.pdf
 *.pdf
 *.jpeg
 *.tif
-.my.cnf
-
+*.my.cnf
+*.dtf
+*.hproj
 
 *.DS_Store
