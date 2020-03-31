@@ -7,8 +7,8 @@ library("lubridate")
 library("tpl")
 library("taxize")
 library("googlesheets")
-install.packages("PFTCFunctions")
-library("PFTCFunctions")
+#install.packages("PFTCFunctions")
+#library("PFTCFunctions")
 
 # Source ITEX (for Site-Elevation comninations)
 #source(file = "community/ImportITEX.R")
@@ -365,13 +365,6 @@ traitsSV2018 <- traits2018 %>%
          Species = ifelse(Species == "hieracifolia", "hieraciifolia", Species))
   
 
-
-traitsSV2018 %>% filter(SLA_cm2_g > 500) %>% select(ID, Project, Gradient, Site, PlotID, Taxon, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_cm2, SLA_cm2_g, Comment)
-traitsSV2018 %>% filter(Gradient == "X", Taxon == "festuca rubra") %>% select(ID, Wet_Mass_Total_g, Dry_Mass_Total_g, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2)
-
-traitsSV2018 %>% filter(ID %in% c("AAQ4039")) %>% select(ID, Wet_Mass_Total_g, Dry_Mass_Total_g, Wet_Mass_g, Dry_Mass_g, Bulk_nr_leaves, NrLeaves, NumberLeavesScan)
-
-
   
 checkTraitNames <- tpl.get(unique(traitsSV2018$Taxon))
 unique(checkTraitNames$note)
@@ -390,35 +383,7 @@ head(tnrsCheck)
 #6 Saxifraga hieraciifolia replaced synonym micranthes hieraciifolia
 
 
-#### Chemical Traits ####
-cnp <- read_excel(path = "traits/data/Norway_CNP_2019_021419.xls")
 
-cnp <- cnp %>% 
-  rename(ID = `STOICH LABEL`, C_percent = `%C`, N_percent = `%N`, CN_ratio = `C/N`, dN15_percent = `δ15N ‰`, dC13_percent = `δ13C ‰`, P_Ave = P_AVG, P_Std = `P_STD DEV`, P_Co_Var = `P_CO VAR`, CNP_Comment = NOTES) %>% 
-  select(-SITE, -CN_FILE_NAME, -P_FILE_NAME) %>% 
-  mutate(ID = gsub("BXE31110", "BXE3110", ID),
-         ID = gsub("BMP3141", "BPM3141", ID),
-         ID = gsub("ALA6943", "ALA6941", ID),
-         ID = gsub("BBC2984", "BBC2982", ID),
-         ID = gsub("BDN0365", "BDN0363", ID),
-         ID = gsub("BHS6706", "BHS6704", ID),
-         ID = gsub("BLL7088", "BLL7086", ID),
-         ID = gsub("BMG1769", "BGM1767", ID),
-         ID = gsub("BOG7011", "BOG7009", ID),
-         ID = gsub("BTG5955", "BTG5953", ID),
-         ID = gsub("BTH8781", "BTH8779", ID),
-         ID = gsub("BWQ3665", "BWQ3663", ID),
-         ID = gsub("CBO1253", "CBO1251", ID),
-         ID = gsub("CCE6413", "CCE6411", ID),
-         ID = gsub("BPG0976", "BPG0974", ID),
-         ID = gsub("BTJ3153", "BTJ3155", ID)) %>% 
-  mutate_all(funs(gsub("REPEAT", NA, .))) %>% 
-  mutate_all(funs(gsub("Not Enough Sample", NA, .)))
-
-
-
-# Check IDs
-setdiff(cnp$ID, all_codes$hashcode)
 
 # Join cnp with traits
 traitsSV2018 <- traitsSV2018 %>% 
