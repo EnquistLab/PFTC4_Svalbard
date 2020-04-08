@@ -50,6 +50,12 @@ p <- p %>%
          ID = gsub("BTJ3153", "BTJ3155", ID),
          ID = gsub("BMP3141", "BPM3141", ID),
          ID = gsub("BNQ3128", "BNG3128", ID),
+         ID = gsub("DBM2786", "DBM2768", ID),
+         ID = gsub("Dec1935", "DEC0035", ID),
+         ID = gsub("DEW9132", "DEN9132", ID),
+         ID = gsub("AMK4734", "AMK4737", ID),
+         ID = gsub("BLT5062", "BLT5002", ID),
+         ID = gsub("Apr5110", "APR5110", ID),
          ID = gsub("CBX63219", "CBX6319", ID))
 
 setdiff(p$ID, all_codes$hashcode)
