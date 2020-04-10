@@ -3,9 +3,11 @@
 #########################
 
 # LOAD LIBRARIES
+library("tidyverse")
 library("readxl")
 library("R.utils")
 library("broom")
+library("stringr")
 
 
 ############################################################################
@@ -64,42 +66,44 @@ setdiff(p$ID, all_codes$hashcode)
 standard_concentration <- tibble(Standard = c(0, 2, 4, 8, 12, 16),
                                    Concentration = c(0, 0.061, 0.122, 0.242, 0.364, 0.484))
 Standard <- p %>% 
-    select(Batch, ID, Sample_Absorbance) %>% 
-    filter(ID %in% c("Standard1", "Standard2"),
-           # remove batch if Sample_Absorbance is NA; Sample has not been measured
-           !is.na(Sample_Absorbance)) %>% 
-    group_by(Batch, ID) %>% 
-    nest(standard = c(Sample_Absorbance)) %>% 
-    mutate(standard = map(standard, bind_cols, standard_concentration)) 
-
+  select(Country, Batch, ID, Sample_Absorbance) %>% 
+  filter(ID %in% c("Standard1", "Standard2")) %>% 
+  group_by(Country, Batch, ID) %>% 
+  nest(standard = c(Sample_Absorbance)) %>% 
+  mutate(standard = map(standard, bind_cols, standard_concentration),
+         # remove batch if Sample_Absorbance is NA; Sample has not been measured
+         standard = map(standard, ~ filter(., !is.na(Sample_Absorbance)))) 
 
 # Plot 2 Standard curves
 Standard %>% 
-    unnest() %>% 
-    ggplot(aes(x = Sample_Absorbance, y = Concentration, colour = ID)) +
-    geom_point() +
-    geom_smooth(method = "lm", se = FALSE) +
-    labs(x = "Absorbance", y = expression(paste("Concentration ", mu, "g/ml"))) +
+  unnest() %>% 
+  ggplot(aes(x = Sample_Absorbance, y = Concentration, colour = ID)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Absorbance", y = expression(paste("Concentration ", mu, "g/ml"))) +
   facet_wrap(~ Batch)
+
 
 
 # Choose standard and make model
 ModelResult <- Standard %>% 
-    mutate(correlation = map_dbl(standard, ~cor(.$Sample_Absorbance, .$Concentration, use = "pair"))) %>% 
-    group_by(Batch) %>% 
-    slice(which.max(correlation)) %>% 
-    mutate(fit = map(standard, ~lm(Concentration ~ Sample_Absorbance, .)))
-
-
+  mutate(correlation = map_dbl(standard, ~ if(length(.x$Sample_Absorbance > 1))
+                                             {cor(.x$Sample_Absorbance, .x$Concentration, use = "pair")}
+                                             else{NA_real_})) %>% 
+  group_by(Country, Batch) %>% 
+  slice(which.max(correlation)) %>% 
+  mutate(fit = map(standard, ~lm(Concentration ~ Sample_Absorbance, .)))
+    
+    
 # Calculate Mean, sd, coeficiant variability for each leaf and flag data
 p2 <- p %>% 
     filter(!ID %in% c("Standard1", "Standard2"),
            # remove samples without mass
            !is.na(Sample_Mass)) %>% 
-    group_by(Batch) %>% 
-    nest(data = c(Country:Name_measured)) %>% 
+    group_by(Country, Batch) %>% 
+    nest(data = c(ID:Name_measured)) %>% 
     # add estimate from model
-    left_join(ModelResult %>% select(-ID), by = "Batch")
+    left_join(ModelResult %>% select(-ID), by = c("Country", "Batch"))
 
   
 OriginalValues <- p2 %>% 
@@ -148,18 +152,34 @@ CorrectedValues <- OriginalValues %>%
 # import CN and isotope data and merge
 # Read isotope data
 list_files <- dir(path = "traits/data/IsotopeData/", pattern = "\\.xlsx$", full.names = TRUE)
-cn_isotopes <- map(list_files, read_excel, skip = 13) %>% 
-    map_df(~{select(.,-c(...12:...17)) %>% 
-        slice(1:grep("Analytical precision, 1-sigma", ...1)-1) %>% 
-        filter(!is.na(...1)) %>% 
-        rename(Samples_Nr = ...1, Individual_Nr = `Sample ID`, Site = ...3, Row = R, Column = C, C_percent = `C%`, N_percent = `N%`, CN_ratio = `C/N`, dN15_percent = `δ15N ‰(ATM)`, dC13_percent = `δ13C ‰(PDB)`, Remark_CN = ...11)
-    }) %>% 
-  slice(-2) %>% 
-  filter(C_percent != "REPEAT")
+
+cn_isotopes <- list_files %>% 
+  set_names() %>% 
+  map(., ~ {sheetname <- excel_sheets(.x)
+sheetname <- if(length(sheetname) == 1) {
+  sheetname
+} else {
+  s <- str_subset(sheetname, fixed("REPORT("))
+  if(length(s) == 0){s <- sheetname[1]}
+  s
+}
+read_excel(.x, skip = 13, sheet = sheetname, na = c("NA", "REPEAT", "small", "See below", "#WERT!", "4X"))}) %>%
+  map_df(~ {select(.,-c(...12:...17)) %>% 
+      slice(1:grep("Analytical precision, 1-sigma", ...1)-1) %>% 
+      filter(!is.na(...1)) %>% # removing empty rows
+      filter(!is.na(C)) %>% 
+      rename(Samples_Nr = ...1, Individual_Nr = `Sample ID`, Site = ...3, Row = R, Column = C, C_percent = `C%`, N_percent = `N%`, CN_ratio = `C/N`, dN15_percent = `δ15N ‰(ATM)`, dC13_percent = `δ13C ‰(PDB)`, Remark_CN = ...11) %>% 
+      mutate(Column = as.character(Column))
+  }, .id = "filename") %>% 
+  # remove one row
+  filter(!c(Samples_Nr == 2 & filename == "traits/data/IsotopeData//Enquist_18NORWAY-3_119-REPORT.xlsx")) %>% 
+  mutate(Samples_Nr = if_else(Samples_Nr == "2*", "2", Samples_Nr))
+
 setdiff(cn_isotopes$Individual_Nr, all_codes$hashcode)
 
 # CN mass data and join
-cn_mass <- read_csv(file = "traits/data/CNP_Template - CN.csv")
+cn_mass <- read_csv(file = "traits/data/CNP_Template - CN.csv") %>% 
+  mutate(Column = as.character(Column))
 setdiff(cn_mass$Individual_Nr, all_codes$hashcode)
 
 cn_data <- cn_mass %>% 
@@ -176,10 +196,20 @@ cn_data <- cn_mass %>%
   filter(!is.na(ID),
          !is.na(C_percent))
 
-# join all tables
+setdiff(cn_data$ID, all_codes$hashcode)
+
+
+# join with phosphorus
 cnp_data <- CorrectedValues %>% 
   left_join(cn_data, by = c("ID", "Country", "Batch"))
 
+# Check how many leaves missing in itex
+load(file = "traits/cleaned_Data/traitsITEX_SV_2018.Rdata", verbose = TRUE)
 # itex
-itex <- traitsSV2018 %>% filter(Gradient == "X")
-itex %>% anti_join(cnp_data, by = "ID") %>% select(ID)
+traits2018 %>% 
+  filter(Site == "X") %>% 
+  anti_join(cnp_data, by = "ID") %>% 
+  group_by(Elevation, Taxon, Plot, Individual_nr) %>% 
+  summarise(n = n()) %>% pn
+  
+
