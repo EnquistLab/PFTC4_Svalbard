@@ -31,18 +31,18 @@ TinyTag <- dat %>%
   pivot_longer(cols = c(-DateTime), names_to = "Treatment", values_to = "Value") %>% 
   filter(!is.na(Value)) %>% 
   filter(grepl("OTC|CTL", Treatment)) %>% 
-  separate(col = Treatment, into = c("Site", "PlotID", "Treatment", "L1", "L2", "Type"), sep = " |_") %>% 
+  separate(col = Treatment, into = c("Site", "PlotID", "Treatment", "LoggerID_Jun", "LoggerID_Aug", "Type"), sep = " |_") %>% 
   mutate(PlotID = gsub("L", "", PlotID),
          PlotID = paste(Site, PlotID, sep = "-"),
-         Logger = "TinyTag") 
+         Logger = "TinyTag") %>% 
   # clean data: CAS-9
   mutate(Value = if_else(PlotID == "CAS-9" & DateTime > "2005-06-06 01:00:00" & DateTime < "2005-06-28 23:00:00", NA_real_, Value),
          Value = if_else(PlotID == "CAS-9" & DateTime > "2005-08-08 01:00:00", NA_real_, Value)) %>% 
   filter(!is.na(Value))
 
 # Checks
-# TinyTag %>% 
-#   filter(Type == "soil") %>% 
+# TinyTag %>%
+#   filter(Type == "soil") %>%
 #   ggplot(aes(x = DateTime, y = Value, colour = PlotID)) +
-#   geom_point() + 
+#   geom_point() +
 #   facet_grid(Treatment ~ Site)
