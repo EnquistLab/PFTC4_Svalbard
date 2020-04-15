@@ -2,10 +2,6 @@
 #### DOWNLOAD RAW DATA FROM OSF ####
 ####################################
 
-# Library
-#devtools::install_github("Between-the-Fjords/dataDownloader")
-library("dataDownloader")
-
 # Download zip file from OSF
 get_file(node = "smbqh",
          file = "Climate_Data_ITEX_2015_2018.zip",
