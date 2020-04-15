@@ -42,7 +42,8 @@ ibutton <- list.files("climate/data/DATA_ITEX_2015_2018/Plots_iButtons", recursi
          Value = if_else(Type == "surface" & PlotID == "CAS-4" & Value < -10, NA_real_, Value),
          Value = if_else(Type == "surface" & PlotID == "BIS-2" & DateTime > "2018-07-08 00:00:00", NA_real_, Value)) %>% 
   filter(!is.na(Value)) %>% 
-  mutate(Date = ymd(format(DateTime, "%Y-%m-%d")))
+  mutate(Logger = "iButton") %>% 
+  as_tibble()
 
 #ibutton <- setDT(ibutton)
 
