@@ -3,11 +3,9 @@
 ####################################
 
 # Download zip file from OSF
-get_file(node = "smbqh",
-         file = "Climate_Data_ITEX_2015_2018.zip",
-         path = "climate/raw_data",
-         remote_path = "RawData/RawData_Climate")
-
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "raw_climate", 
+                   path = "climate/raw_data")
 
 # Unzip files
 zipFile <- "climate/raw_data/Climate_Data_ITEX_2015_2018.zip"
