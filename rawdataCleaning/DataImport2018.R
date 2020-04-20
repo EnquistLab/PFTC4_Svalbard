@@ -15,6 +15,8 @@ library("googlesheets4")
 
 pn <- . %>% print(n = Inf)
 
+# source import of chemical data
+source("rawdataCleaning/R/ImportChemicalTraits.R")
 
 # Source ITEX (for Site-Elevation comninations)
 #source(file = "community/ImportITEX.R")
@@ -22,7 +24,7 @@ pn <- . %>% print(n = Inf)
 #BienTTT <- read_rds(path = "traits/data/BIEN_and_TTT_traits_for_ITEX_species.rds")
 
 
-## Read in data sets
+#### READ IN DATA SETS ####
 coords <- read_excel(path = "traits/cleaned_Data/PFTC4_Svalbard_Coordinates.xlsx", col_names = TRUE)
 traits <- read_csv(file = "traits/data/LeafTrait_Svalbard_with_DM.csv")
 LeafArea2018 <- read_csv(file = "traits/data/PFTC4_Scalbard_Raw_LeafArea_2018.csv", col_names = TRUE)
@@ -202,7 +204,7 @@ traits <- traits %>%
 
 
 
-#### LEAF AREA ####
+#### JOIN TRAITS AND LEAF AREA DATA ####
 
 ## Check if Leaf IDs are valid ##
 #setdiff(LeafArea2018$ID, all_codes$hashcode)
@@ -234,7 +236,7 @@ traits2018 <- traits %>%
 
 
 
-### Calculate Traits and fix wrong trait values
+#### CALCULATE SLA, LDMC AND FIX MORE STUFF ####
 traitsSV2018 <- traits2018 %>% 
   # Make variables consistent with China and Peru
   rename(Leaf_Area_cm2 = Area_cm2, Dry_Mass_g = Dry_mass_g, Wet_Mass_g = Wet_mass_g, Plant_Height_cm = Plant_height_cm, Leaf_Thickness_1_mm = Leaf_thickness_1_mm, Leaf_Thickness_2_mm = Leaf_thickness_2_mm, Leaf_Thickness_3_mm = Leaf_thickness_3_mm) %>% 
@@ -309,6 +311,14 @@ traitsSV2018 <- traits2018 %>%
   # Only one leaf in the bag; wet weight probably 6 leaves, dry weight will be only one leaf
   # Nees multiplying by 6, becaue leaf nr has been changed to 1
   mutate(Wet_Mass_g = if_else(ID == "BMN6819", Wet_Mass_g / 6, Wet_Mass_g)) %>% 
+
+  # CMP9835
+  mutate(Leaf_Thickness_1_mm = if_else(ID == "CMP9835", NA_real_, Leaf_Thickness_1_mm),
+         Leaf_Thickness_2_mm = if_else(ID == "CMP9835", NA_real_, Leaf_Thickness_2_mm),
+         Leaf_Thickness_3_mm = if_else(ID == "CMP9835", NA_real_, Leaf_Thickness_3_mm),
+         Length_1_cm = if_else(ID == "CMP9835", 4.5, Length_1_cm),
+         Length_2_cm = if_else(ID == "CMP9835", 2.7, Length_2_cm),
+         Length_3_cm = if_else(ID == "CMP9835", 3.4, Length_3_cm)) %>% 
   
   # Calculate SLA, LMDC
   mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
@@ -322,10 +332,24 @@ traitsSV2018 <- traits2018 %>%
          #Length_Ave_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE)),
          #GreenLength_Ave_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>% 
   
-  # Flags
-  mutate(DryFlag = if_else(ID %in% c("AZJ0517", "BJI3731", "CSB4973", "CSO4356", "CSV1484", "CTK3722", "AIT0192", "AIY6451", "AJQ6204", "AME5937", "APM9100", "ARB9309", "ARF1165", "ARG3285", "AUQ7588", "BMN6819", "BUL6601", "BUM5904", "BMA3725", "BNR3951"), "Tiny dry mass_SLA too high_#zap", NA_character_)) %>% 
-  mutate(AreaFlag = if_else(ID == "CCP4302", "Area cut a tiny bit", NA_character_)) %>% 
-  mutate(ThickFlag = if_else(ID %in% c("ADM0955", "AMD6577", "AME5937", "AMF5763", "AMH0895", "AOE8815", "AOT9797", "ASF0636", "ASF0636", "BLS7300", "BUR2769", "BUZ1775"), "Thickness_measure_wrong_remeasured_dry_leaf_might_be_too_small_value", NA_character_)) %>% 
+  # Flags and filter unrealistic trait values
+  mutate(Dry_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_g),
+         Wet_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Wet_Mass_g),
+         Leaf_Area_cm2 = ifelse(SLA_cm2_g > 500, NA_real_, Leaf_Area_cm2),
+         Dry_Mass_Total_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_Total_g),
+         Wet_Mass_Total_g = ifelse(SLA_cm2_g > 500, NA_real_, Wet_Mass_Total_g),
+         Leaf_Area_Total_cm2 = ifelse(SLA_cm2_g > 500, NA_real_, Leaf_Area_Total_cm2),
+         Flag = ifelse(SLA_cm2_g > 500, "SLA_>_500", NA_character_),
+         SLA_cm2_g = ifelse(SLA_cm2_g > 500, NA_real_, SLA_cm2_g),
+         
+         Dry_Mass_g = ifelse(LDMC > 1, NA_real_, Dry_Mass_g),
+         Wet_Mass_g = ifelse(LDMC > 1, NA_real_, Wet_Mass_g),
+         Dry_Mass_Total_g = ifelse(LDMC > 1, NA_real_, Dry_Mass_Total_g),
+         Wet_Mass_Total_g = ifelse(LDMC > 1, NA_real_, Wet_Mass_Total_g),
+         Flag = ifelse(LDMC > 1, "LDMC_>_1", NA_character_),
+         LDMC = ifelse(LDMC > 1, NA_real_, LDMC)) %>% 
+  mutate(Flag = if_else(ID == "CCP4302", "Area cut a tiny bit", NA_character_)) %>% 
+  mutate(Flag = if_else(ID %in% c("ADM0955", "AMD6577", "AME5937", "AMF5763", "AMH0895", "AOE8815", "AOT9797", "ASF0636", "ASF0636", "BLS7300", "BUR2769", "BUZ1775"), "Thickness_measure_wrong_remeasured_dry_leaf_might_be_too_small_value", NA_character_)) %>% 
 
   # Make data speak to other PFTC data
   rename(Gradient = Site, Site = Elevation, PlotID = Plot, Data_entered_by = Person_data_entered, Comment = Remark) %>% 
@@ -338,7 +362,7 @@ traitsSV2018 <- traits2018 %>%
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
   
-  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
+  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Flag, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
 
   
 
@@ -369,49 +393,46 @@ traitsSV2018 <- traits2018 %>%
 #   ggplot(aes(x = log(Dry_Mass_g), y = log(Leaf_Area_cm2), colour = SLA_cm2_g > 500)) +
 #   geom_point()
 
+# traitsSV2018 %>%
+#   ggplot(aes(x = Leaf_Thickness_1_mm, y = Leaf_Thickness_3_mm)) +
+#   geom_point()
 
-# Join cnp with traits
+# These IDs are in the cnp but not trait data:
+# AQL4331 was deleted, because leaf was lost, obviously not
+# DBO4590, DEG1493, DEJ2799, DFE9019
+
+
+#### JOIN CNP AND TRAITS DATA ####
 traitsSV2018 <- traitsSV2018 %>% 
-  left_join(cnp, by = "ID") %>% 
-  # filter unrealistic trait values
-  mutate(Dry_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_g),
-         Wet_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Wet_Mass_g),
-         Leaf_Area_cm2 = ifelse(SLA_cm2_g > 500, NA_real_, Leaf_Area_cm2),
-         SLA_cm2_g = ifelse(SLA_cm2_g > 500, NA_real_, SLA_cm2_g),
-         Dry_Mass_Total_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_Total_g),
-         Wet_Mass_Total_g = ifelse(SLA_cm2_g > 500, NA_real_, Wet_Mass_Total_g),
-         Leaf_Area_Total_cm2 = ifelse(SLA_cm2_g > 500, NA_real_, Leaf_Area_Total_cm2),
-         
-         Dry_Mass_g = ifelse(LDMC > 1, NA_real_, Dry_Mass_g),
-         Wet_Mass_g = ifelse(LDMC > 1, NA_real_, Wet_Mass_g),
-         LDMC = ifelse(LDMC > 1, NA_real_, LDMC),
-         Dry_Mass_Total_g = ifelse(LDMC > 1, NA_real_, Dry_Mass_Total_g),
-         Wet_Mass_Total_g = ifelse(LDMC > 1, NA_real_, Wet_Mass_Total_g))
+  left_join(cnp_data, by = "ID")
+
   
 
-### Divid into separate data sets
-# Gradients, and mosses
+#### DIVID DATA INTO GRADIEN AND ITEX ####
+# Gradients
 traitsGradients_SV_2018 <- traitsSV2018 %>% 
-  filter(Project %in% c("T", "M")) %>% 
-save(traitsGradients_SV_2018, file = "traits/data/traitsGradients_SV_2018.Rdata")
-write_csv(traitsGradients_SV_2018, path = )
+  filter(Project %in% c("T"))
+write_csv(traitsGradients_SV_2018, path = "traits/data/PFTC4_Svalbard_2018_TraitsGradients.csv", col_names = TRUE)
 
 # ITEX
 traitsITEX_SV_2018 <- traitsSV2018 %>%
   filter(Project == "X") %>% 
   #select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
   mutate(Treatment = substr(PlotID, str_length(PlotID)-2, str_length(PlotID)),
-         PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-")) %>% 
-save(traitsITEX_SV_2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
+         PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-"))
+write_csv(traitsITEX_SV_2018, path = "traits/data/PFTC4_Svalbard_2018_ITEX.csv", col_names = TRUE)
   
+# Mosses
+traitsGradients_Bryophytes_SV_2018 <- traitsSV2018 %>% 
+  filter(Project %in% c("M")) 
+write_csv(traitsGradients_Bryophytes_SV_2018, path = "traits/data/PFTC4_Svalbard_2018_Bryo_TraitsGradients.csv", col_names = TRUE)
 
 # # Saxy
-# traitsSAXY_SV_2018 <- traitsSV2018 %>%
-#   filter(Project == "Saxy") %>% 
-#   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
-#   mutate(Site = substr(PlotID, 1, 2))
-#save(traitsSAXY_SV_2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
-
+traitsSAXY_SV_2018 <- traitsSV2018 %>%
+  filter(Project == "Saxy") %>%
+  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>%
+  mutate(Site = substr(PlotID, 1, 2))
+write_csv(traitsSAXY_SV_2018, path = "traits/data/PFTC4_Svalbard_Traits_2018_Saxy.csv", col_names = TRUE)
 
 
 # counts
