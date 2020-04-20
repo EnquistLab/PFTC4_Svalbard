@@ -8,15 +8,19 @@ library("readxl")
 library("R.utils")
 library("broom")
 library("stringr")
+library("googlesheets4")
 
+# For now this data is downloaded directly form google docs. When all data is collected, should be moved to OSF.
 
 ############################################################################
 #### PHOSPHORUS DATA ####
-p <- read_csv(file = "traits/data/CNP_Template - Phosphorus.csv")
+p <- sheets_read(ss = "1f2mDGLD8vH0ZxywC2YkfZTGEzspfCbsBVOV5osWIDBI", sheet = "Phosphorus") %>% 
+  select(-Rack_Number, -Row, -Column)
+#p <- read_csv(file = "traits/data/CNP_Template - Phosphorus.csv")
 
 # Check IDs
-load(file = "traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
-setdiff(p$Individual_Nr, all_codes$hashcode)
+# load(file = "traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
+# setdiff(p$Individual_Nr, all_codes$hashcode)
 
 p <- p %>% 
   rename("ID" = "Individual_Nr", "Country" = "Site") %>% 
@@ -60,7 +64,8 @@ p <- p %>%
          ID = gsub("Apr5110", "APR5110", ID),
          ID = gsub("CBX63219", "CBX6319", ID))
 
-setdiff(p$ID, all_codes$hashcode)
+# only "Hard Red Spring Wheat Flour", "Standard1" and "Standard2"
+#setdiff(p$ID, all_codes$hashcode)
 
 # pull of standard, calculate R2, choose standard for absorbance curve, make regression and plot
 standard_concentration <- tibble(Standard = c(0, 2, 4, 8, 12, 16),
@@ -75,13 +80,13 @@ Standard <- p %>%
          standard = map(standard, ~ filter(., !is.na(Sample_Absorbance)))) 
 
 # Plot 2 Standard curves
-Standard %>% 
-  unnest() %>% 
-  ggplot(aes(x = Sample_Absorbance, y = Concentration, colour = ID)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(x = "Absorbance", y = expression(paste("Concentration ", mu, "g/ml"))) +
-  facet_wrap(~ Batch)
+# Standard %>% 
+#   unnest() %>% 
+#   ggplot(aes(x = Sample_Absorbance, y = Concentration, colour = ID)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", se = FALSE) +
+#   labs(x = "Absorbance", y = expression(paste("Concentration ", mu, "g/ml"))) +
+#   facet_wrap(~ Batch)
 
 
 
@@ -138,9 +143,9 @@ CorrectedValues <- OriginalValues %>%
     mutate(Pconc_Corrected = Pconc * Correction_Factor) %>% 
     # Calculate mean, sd, coefficient of variation
     group_by(Batch, Country, ID) %>% 
-    mutate(meanP_Corrected = mean(Pconc_Corrected, na.rm = TRUE), 
+    summarise(P_percent = mean(Pconc_Corrected, na.rm = TRUE), 
            sdP_Corrected = sd(Pconc_Corrected, na.rm = TRUE),
-           CoeffVarP_Corrected = sdP_Corrected / meanP_Corrected,
+           CoeffVarP_Corrected = sdP_Corrected / P_percent,
            N_replications = n()) %>% 
     # flag data
     mutate(Flag_corrected = ifelse(CoeffVarP_Corrected >= 0.2, "flag", ""))
@@ -168,19 +173,22 @@ read_excel(.x, skip = 13, sheet = sheetname, na = c("NA", "REPEAT", "small", "Se
       slice(1:grep("Analytical precision, 1-sigma", ...1)-1) %>% 
       filter(!is.na(...1)) %>% # removing empty rows
       filter(!is.na(C)) %>% 
-      rename(Samples_Nr = ...1, Individual_Nr = `Sample ID`, Site = ...3, Row = R, Column = C, C_percent = `C%`, N_percent = `N%`, CN_ratio = `C/N`, dN15_percent = `δ15N ‰(ATM)`, dC13_percent = `δ13C ‰(PDB)`, Remark_CN = ...11) %>% 
+      rename(Samples_Nr = ...1, Individual_Nr = `Sample ID`, Site = ...3, Row = R, Column = C, C_percent = `C%`, N_percent = `N%`, CN_ratio = `C/N`, dN15_permil = `δ15N ‰(ATM)`, dC13_permil = `δ13C ‰(PDB)`, Remark_CN = ...11) %>% 
       mutate(Column = as.character(Column))
   }, .id = "filename") %>% 
   # remove one row
   filter(!c(Samples_Nr == 2 & filename == "traits/data/IsotopeData//Enquist_18NORWAY-3_119-REPORT.xlsx")) %>% 
   mutate(Samples_Nr = if_else(Samples_Nr == "2*", "2", Samples_Nr))
 
-setdiff(cn_isotopes$Individual_Nr, all_codes$hashcode)
+# Check ids
+#setdiff(cn_isotopes$Individual_Nr, all_codes$hashcode)
 
 # CN mass data and join
-cn_mass <- read_csv(file = "traits/data/CNP_Template - CN.csv") %>% 
+cn_mass <- sheets_read(ss = "1f2mDGLD8vH0ZxywC2YkfZTGEzspfCbsBVOV5osWIDBI", sheet = "CN") %>% 
   mutate(Column = as.character(Column))
-setdiff(cn_mass$Individual_Nr, all_codes$hashcode)
+# cn_mass <- read_csv(file = "traits/data/CNP_Template - CN.csv") %>% 
+#   mutate(Column = as.character(Column))
+#setdiff(cn_mass$Individual_Nr, all_codes$hashcode)
 
 cn_data <- cn_mass %>% 
   mutate(Individual_Nr = gsub("BOO4539", "BOO4359", Individual_Nr)) %>% 
@@ -196,20 +204,28 @@ cn_data <- cn_mass %>%
   filter(!is.na(ID),
          !is.na(C_percent))
 
-setdiff(cn_data$ID, all_codes$hashcode)
+#setdiff(cn_data$ID, all_codes$hashcode)
 
+# drone IDs
+droneID <- sheets_read(ss = "1hUslQ13FohAdfD7HCMWdqiEKpWhLdYmaRfMeH7Wp0O4", sheet = "Tabellenblatt2") %>% 
+  select(Project, ID, Wet_mass_g, Dry_mass_g) 
 
 # join with phosphorus
-cnp_data <- CorrectedValues %>% 
+cnp_data_all <- CorrectedValues %>% 
   left_join(cn_data, by = c("ID", "Country", "Batch"))
 
-# Check how many leaves missing in itex
-load(file = "traits/cleaned_Data/traitsITEX_SV_2018.Rdata", verbose = TRUE)
-# itex
-traits2018 %>% 
-  filter(Site == "X") %>% 
-  anti_join(cnp_data, by = "ID") %>% 
-  group_by(Elevation, Taxon, Plot, Individual_nr) %>% 
-  summarise(n = n()) %>% pn
-  
+# remove drone leaves
+cnp_data <- cnp_data_all %>% 
+  anti_join(droneID, by = "ID") 
+
+# Drone leaves
+DroneLeaves <- droneID %>% 
+  mutate(ID = gsub("DEj2799", "DEJ2799", ID),
+         ID = gsub("DFFE9019", "DFE9019", ID),
+         ID = gsub("DEG1439", "DEG1493", ID),
+         ID = gsub("DB04590", "DBO4590", ID)) %>% 
+  left_join(cnp_data_all, by = "ID") %>% 
+  select(Project, Country, ID:Dry_mass_g, P_percent, C_percent:dC13_permil, Batch, sdP_Corrected:filename, Remark_CN)
+write_csv(DroneLeaves, path = "traits/data/PFTC4_Svalbard_2018_DroneLeaves.csv")
+
 
