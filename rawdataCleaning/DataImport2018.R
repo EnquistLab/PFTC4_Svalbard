@@ -1,3 +1,7 @@
+#### DOWNLOAD RAW TRAIT DATA FROM OSF ####
+source(file = "rawdataCleaning/Download_Raw_Data.R")
+
+
 # LOAD LIBRARIES
 library("readxl")
 library("tidyverse")
@@ -6,93 +10,72 @@ library("lubridate")
 #devtools::install_github("gustavobio/tpl")
 library("tpl")
 library("taxize")
-library("googlesheets")
-#install.packages("PFTCFunctions")
-#library("PFTCFunctions")
+library("googlesheets4")
 
-# Source ITEX (for Site-Elevation comninations)
-#source(file = "community/ImportITEX.R")
 
 pn <- . %>% print(n = Inf)
 
 
-#### COORDINATES ####
-coords <- read_excel(path = "Coordinates.xlsx", col_names = TRUE)
+# Source ITEX (for Site-Elevation comninations)
+#source(file = "community/ImportITEX.R")
+### Read in BIEN and TTT traits
+#BienTTT <- read_rds(path = "traits/data/BIEN_and_TTT_traits_for_ITEX_species.rds")
 
 
-
-#### IMPORT TRAIT DATA ####
-
-# Download data from google sheet
-
-# # Check which tables you have access to
-# gs_ls()
-# # which google sheets do you have access to?
-# trait <- gs_title("LeafTrait_Svalbard")
-# # list worksheets
-# gs_ws_ls(trait)
-# #download data
-# traits <- gs_read(ss = trait, ws = "Tabellenblatt1") %>% as.tibble() %>% select(-Dry_mass_g)
-# 
-# #import datasheet with dry masses entered
-# trait_dry_mass <- gs_title("LeafTrait_Svalbard (1)")
-# gs_ws_ls(trait_dry_mass)
-# traits_dry_mass <- gs_read(ss = trait_dry_mass, ws = "Tabellenblatt1") %>% 
-#   as.tibble() %>% 
-#   #select(ID, Dry_mass_g) %>% 
-#   mutate(Dry_mass_g = gsub(",", "\\.", Dry_mass_g)) %>% 
-#   mutate(Dry_mass_g = as.numeric(Dry_mass_g))
-
-# Read in data
+## Read in data sets
+coords <- read_excel(path = "traits/cleaned_Data/PFTC4_Svalbard_Coordinates.xlsx", col_names = TRUE)
 traits <- read_csv(file = "traits/data/LeafTrait_Svalbard_with_DM.csv")
+LeafArea2018 <- read_csv(file = "traits/data/PFTC4_Scalbard_Raw_LeafArea_2018.csv", col_names = TRUE)
 
 
+########################################################################
+#### DATA CHECKING ####
 #check which dry masses are missing from leaves from the sites
 #ITEX - 14
-missing_dry_itex <- traits %>% filter(Site == "X") %>% filter(is.na(Dry_mass_g))
-#Control gradient - 5
-missing_dry_control <- traits %>% filter(Site == "C") %>% filter(is.na(Dry_mass_g))
-#Birdcliff gradient - 4
-missing_dry_birdcliff <- traits %>% filter(Site == "B") %>% filter(is.na(Dry_mass_g))
+# missing_dry_itex <- traits %>% filter(Site == "X") %>% filter(is.na(Dry_mass_g))
+# #Control gradient - 5
+# missing_dry_control <- traits %>% filter(Site == "C") %>% filter(is.na(Dry_mass_g))
+# #Birdcliff gradient - 4
+# missing_dry_birdcliff <- traits %>% filter(Site == "B") %>% filter(is.na(Dry_mass_g))
 
-####################################################################################################
-#### DATA CHECKING ####
 # Check LeafID
 # Load trait IDs
-load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
-setdiff(traits$ID, all_codes$hashcode)
+# load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
+# setdiff(traits$ID, all_codes$hashcode)
+# 
+# 
+#  # Check values
+# unique(traits$Day)
+# unique(traits$Site)
+# unique(traits$Elevation)
+# 
+# # Check combinations of Site and Elevation
+# table(traits$Site, traits$Elevation)
+# 
+# # Species and Genus
+# traits %>% distinct(Genus) %>% arrange(Genus) %>% pn
+# traits %>% distinct(Species) %>% arrange(Species) %>% pn
+# traits %>% 
+#   mutate(Taxon = paste(Genus, Species, sep = " ")) %>% 
+#   arrange(Taxon) %>% distinct(Taxon) %>% pn
+# 
+# # Plot name
+# unique(traits$Plot)
+# traits %>% filter(is.na(Plot)) %>% filter(Project != "Sean", Project != "M") # 15 without plot
+# table(traits$Plot, traits$Site)
+# traits %>% 
+#   filter(Site == "X") %>% 
+#   distinct(Plot, Elevation) %>% 
+#   arrange(Elevation, Plot) %>% pn
+# 
+# # Check all the itex plot names and habitat comninations
+# traits %>% 
+#   filter(Site == "X") %>% 
+#   anti_join(itex.codes, by = c("Elevation" = "Habitat", "Plot")) %>% 
+#   select(ID, Elevation, Genus, Species, Plot, Individual_nr, Remark)
+# itex.codes %>% pn
+########################################################################
 
-
- # Check values
-unique(traits$Day)
-unique(traits$Site)
-unique(traits$Elevation)
-
-# Check combinations of Site and Elevation
-table(traits$Site, traits$Elevation)
-
-# Species and Genus
-traits %>% distinct(Genus) %>% arrange(Genus) %>% pn
-traits %>% distinct(Species) %>% arrange(Species) %>% pn
-traits %>% 
-  mutate(Taxon = paste(Genus, Species, sep = " ")) %>% 
-  arrange(Taxon) %>% distinct(Taxon) %>% pn
-
-# Plot name
-unique(traits$Plot)
-traits %>% filter(is.na(Plot)) %>% filter(Project != "Sean", Project != "M") # 15 without plot
-table(traits$Plot, traits$Site)
-traits %>% 
-  filter(Site == "X") %>% 
-  distinct(Plot, Elevation) %>% 
-  arrange(Elevation, Plot) %>% pn
-
-# Check all the itex plot names and habitat comninations
-traits %>% 
-  filter(Site == "X") %>% 
-  anti_join(itex.codes, by = c("Elevation" = "Habitat", "Plot")) %>% 
-  select(ID, Elevation, Genus, Species, Plot, Individual_nr, Remark)
-itex.codes %>% pn
 
 
 ## FIX THE BUGS ##
@@ -104,7 +87,7 @@ itex.codes %>% pn
 # CVP1261: It says Plot D or E; But no cover in D or E. Could be F, cannot fix
 # CDX1924: remark is D or E; Already 3 E, and no cover in D, cannot fix
 # AWN7480: no Plot on envelope. Could be 1-CTL or 5-OTC as those only have 2 ind. Cannot fix.
-#AYU6804 oxyria digyna: Plot says 4, cannot fix
+# AYU6804 oxyria digyna: Plot says 4, cannot fix
 
 # Fixed
 # BHG2119, BJH1430, BJG7192: assumed that these are Plot F, because cover is higher. Could also be B, but cover in B is only 0.5
@@ -115,7 +98,7 @@ itex.codes %>% pn
 # ALO7062: Plot name was 2 and changed to 2-CTL
 ####################################################################################################
 
-#### FIX DATA ####
+#### CLEAN DATA ####
 traits <- traits %>% 
   # Fix leafID
   mutate(ID = recode(ID, "CIG85099" = "CIG8509",
@@ -183,7 +166,8 @@ traits <- traits %>%
          Species = ifelse(Genus == "saxifraga" & Species == "cerua", "cernua", Species),
          Species = ifelse(Genus == "saxifraga" & Species == "oppostifolia", "oppositifolia", Species),
          Species = ifelse(Genus == "aulacomnium" & Species == "turgidium", "turgidum", Species),
-         Species = ifelse(Genus == "sanionia" & Species == "uni", "uncinata", Species)) %>% 
+         Species = ifelse(Genus == "sanionia" & Species == "uni", "uncinata", Species),
+         Species = ifelse(Genus == "micranthes" & Species == "hieracifolia", "hieraciifolia", Species)) %>% 
   
   # Fix wrong species
   mutate(Genus = ifelse(ID == "BAR1151", "salix", Genus)) %>% # typed in wrong, right on envelop
@@ -219,28 +203,27 @@ traits <- traits %>%
 
 
 #### LEAF AREA ####
-load("traits/data/LeafArea2018.Rdata", verbose = TRUE)
 
 ## Check if Leaf IDs are valid ##
-setdiff(LeafArea2018$ID, all_codes$hashcode)
+#setdiff(LeafArea2018$ID, all_codes$hashcode)
 # only Unknown
 
 # check how many ID do not join with trait data
-setdiff(LeafArea2018$ID, traits$ID)
+#setdiff(LeafArea2018$ID, traits$ID)
 # Do not fit with any traits and cannot find out which leaf it is:
 #"ATH9996", "Unknown"
 
 # 24 leaves that have no scan
-traits %>% 
-  anti_join(LeafArea2018, by = "ID") %>% 
-  filter(Project != "M") %>% 
-  select(ID, Day, Site, Elevation, Genus, Species, Plot, Bulk_nr_leaves, Remark) %>% arrange(ID) %>% pn
+# traits %>% 
+#   anti_join(LeafArea2018, by = "ID") %>% 
+#   filter(Project != "M") %>% 
+#   select(ID, Day, Site, Elevation, Genus, Species, Plot, Bulk_nr_leaves, Remark) %>% arrange(ID) %>% pn
 
 
 # Join Area and Traits
 traits2018 <- traits %>% 
   left_join(LeafArea2018, by = "ID") %>% 
-  mutate(Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% 
+  mutate(Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% # NA's introduced here, because characters (bulk)
   mutate(NrLeaves = ifelse(is.na(Bulk_nr_leaves), NumberLeavesScan, Bulk_nr_leaves)) %>% 
 
   # Mark 24 leaves with missing area
@@ -333,14 +316,9 @@ traitsSV2018 <- traits2018 %>%
          LDMC = Dry_Mass_g / Wet_Mass_g) %>% 
 
   # Measures for the mosses
-  mutate(Length_1_cm = is.numeric(Length_1_cm),
-         Length_2_cm = is.numeric(Length_2_cm),
-         Length_3_cm = is.numeric(Length_3_cm),
-         GreenLength_1_cm = is.numeric(GreenLength_1_cm),
-         GreenLength_2_cm = is.numeric(GreenLength_2_cm),
-         GreenLength_3_cm = is.numeric(GreenLength_3_cm),
-         Length_Ave_Moss_cm = (Length_1_cm + Length_2_cm + Length_3_cm)/3,
+  mutate(Length_Ave_Moss_cm = (Length_1_cm + Length_2_cm + Length_3_cm)/3,
          GreenLength_Ave_Moss_cm = (GreenLength_1_cm + GreenLength_2_cm + GreenLength_3_cm)/3) %>% 
+        # should probably use something like this
          #Length_Ave_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE)),
          #GreenLength_Ave_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>% 
   
@@ -354,25 +332,24 @@ traitsSV2018 <- traits2018 %>%
     mutate(Country = "SV",
          Year = 2018,
          Treatment = "C",
-         Date = ymd(paste(Year, 7, Day, sep = "-")),
+         Date = ymd(paste(Year, 7, Day, sep = "-")), # makes one NA, because Day was NA
          Project = ifelse(Gradient == "X", "X", Project)) %>%
   
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
   
-  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by) %>% 
-  mutate(Taxon = ifelse(Taxon == "micranthes hieracifolia", "micranthes hieraciifolia", Taxon),
-         Species = ifelse(Species == "hieracifolia", "hieraciifolia", Species))
-  
+  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
 
   
-checkTraitNames <- tpl.get(unique(traitsSV2018$Taxon))
-unique(checkTraitNames$note)
-checkTraitNames %>% 
-  filter(note == "replaced synonym|family not in APG")
 
-tnrsCheck <- tnrs(query = unique(traitsSV2018$Taxon), source = "iPlant_TNRS")
-head(tnrsCheck)
+#### CHECK TRAIT NAMES WITH TNRS ####
+# checkTraitNames <- tpl.get(unique(traitsSV2018$Taxon))
+# unique(checkTraitNames$note)
+# checkTraitNames %>% 
+#   filter(note == "replaced synonym|family not in APG")
+# 
+# tnrsCheck <- tnrs(query = unique(traitsSV2018$Taxon), source = "iPlant_TNRS")
+# head(tnrsCheck)
 
 # replaced synonym
 #1     Persicaria vivipara replaced synonym      bistorta vivipara
@@ -383,24 +360,41 @@ head(tnrsCheck)
 #6 Saxifraga hieraciifolia replaced synonym micranthes hieraciifolia
 
 
+# Check trait values
+# traitsSV2018 %>%
+#   ggplot(aes(x = log(Dry_Mass_g), y = log(Wet_Mass_g), colour = LDMC > 1)) +
+#   geom_point()
+# 
+# traitsSV2018 %>%
+#   ggplot(aes(x = log(Dry_Mass_g), y = log(Leaf_Area_cm2), colour = SLA_cm2_g > 500)) +
+#   geom_point()
 
 
 # Join cnp with traits
 traitsSV2018 <- traitsSV2018 %>% 
-  left_join(cnp, by = "ID")
+  left_join(cnp, by = "ID") %>% 
+  # filter unrealistic trait values
+  mutate(Dry_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_g),
+         Wet_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Wet_Mass_g),
+         Leaf_Area_cm2 = ifelse(SLA_cm2_g > 500, NA_real_, Leaf_Area_cm2),
+         SLA_cm2_g = ifelse(SLA_cm2_g > 500, NA_real_, SLA_cm2_g),
+         Dry_Mass_Total_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_Total_g),
+         Wet_Mass_Total_g = ifelse(SLA_cm2_g > 500, NA_real_, Wet_Mass_Total_g),
+         Leaf_Area_Total_cm2 = ifelse(SLA_cm2_g > 500, NA_real_, Leaf_Area_Total_cm2),
+         
+         Dry_Mass_g = ifelse(LDMC > 1, NA_real_, Dry_Mass_g),
+         Wet_Mass_g = ifelse(LDMC > 1, NA_real_, Wet_Mass_g),
+         LDMC = ifelse(LDMC > 1, NA_real_, LDMC),
+         Dry_Mass_Total_g = ifelse(LDMC > 1, NA_real_, Dry_Mass_Total_g),
+         Wet_Mass_Total_g = ifelse(LDMC > 1, NA_real_, Wet_Mass_Total_g))
   
 
-### Read in BIEN and TTT traits
-BienTTT <- read_rds(path = "traits/data/BIEN_and_TTT_traits_for_ITEX_species.rds")
-
-
 ### Divid into separate data sets
-# Gradients, Sean and mosses
+# Gradients, and mosses
 traitsGradients_SV_2018 <- traitsSV2018 %>% 
-  filter(Project %in% c("T", "Sean", "M")) %>% 
-  filter(SLA_cm2_g < 500, LDMC < 1)
+  filter(Project %in% c("T", "M")) %>% 
 save(traitsGradients_SV_2018, file = "traits/data/traitsGradients_SV_2018.Rdata")
-
+write_csv(traitsGradients_SV_2018, path = )
 
 # ITEX
 traitsITEX_SV_2018 <- traitsSV2018 %>%
@@ -408,17 +402,15 @@ traitsITEX_SV_2018 <- traitsSV2018 %>%
   #select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
   mutate(Treatment = substr(PlotID, str_length(PlotID)-2, str_length(PlotID)),
          PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-")) %>% 
-  filter(SLA_cm2_g < 500, LDMC < 1)
 save(traitsITEX_SV_2018, file = "traits/data/traitsITEX_SV_2018.Rdata")
   
 
-# Saxy
-traitsSAXY_SV_2018 <- traitsSV2018 %>%
-  filter(Project == "Saxy") %>% 
-  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
-  mutate(Site = substr(PlotID, 1, 2)) %>% 
-  filter(SLA_cm2_g < 500, LDMC < 1)
-save(traitsSAXY_SV_2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
+# # Saxy
+# traitsSAXY_SV_2018 <- traitsSV2018 %>%
+#   filter(Project == "Saxy") %>% 
+#   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
+#   mutate(Site = substr(PlotID, 1, 2))
+#save(traitsSAXY_SV_2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
 
 
 
@@ -426,87 +418,3 @@ save(traitsSAXY_SV_2018, file = "traits/data/traitsSAXY_SV_2018.Rdata")
 dim(traits2018) # 1693
 traits2018 %>% distinct(Taxon) # 44 species
 traits2018 %>% group_by(Taxon) %>% count() %>% pn
-
-
-#### COMMUNITY DATA ####
-
-# Check which tables you have access to
-gs_ls()
-# which google sheets do you have access to?
-comm <- gs_title("dataPTT4communities")
-# list worksheets
-gs_ws_ls(comm)
-#download data
-communityRaw <- gs_read(ss = comm, ws = "DATA") %>% as.tibble()
-
-metaCommunitySV_2018 <- communityRaw %>%
-  select(Day, Site, Elevation, Plot, MedianHeight_cm, Max_height_cm, Vascular, Bryophytes, Lichen_soil, Lichen_rock, Rock, BareGround, BioCrust, Litter, Weather, PlotSize_cm2, Aspect, Slope_percent, Notes, Entered_by, Collected_by) %>% 
-  filter(!is.na(Site)) %>% # remove empty line
-  mutate(Country = "SV",
-         Year = 2018,
-         Elevation = as.character(Elevation)) %>% 
-  rename(Gradient = Site, Site = Elevation, PlotID = Plot)
-save(metaCommunitySV_2018, file = "community/data/metaCommunitySV_2018.Rdata")
-
-# Extra Draba data from Finns
-drabas <- read_xlsx(path = "community/data/DRABAS_2.xlsx")
-drabas <- drabas %>% 
-  gather(key = Taxon2, value = occurence, -site, -transect, -plot) %>% 
-  filter(occurence > 0) %>% 
-  rename(Site = site, Elevation = transect, Plot = plot) %>% 
-  select(-occurence) %>% 
-  #mutate(Entered_by = "Julia", Collected_by = "Julia") %>% 
-  mutate(Taxon2 = ifelse(Taxon2 == "No Drabas", "Cerastium arcticum", Taxon2))
-  #mutate(Cover_Fertile = "0.1_1")
-  
-
-communitySV_2018 <- communityRaw %>%
-  select(-GPS_Nr, -Lat_N, -Long_E, -Scat_species, -MedianHeight_cm, -Max_height_cm, -Vascular, -Bryophytes, -Lichen_soil, -Lichen_rock, -Rock, -BareGround, -BioCrust, -Litter, -Weather, -Elevation_m, -PlotSize_cm2, -Aspect, -Slope_percent, -GPSUnitAccuracy) %>% 
-  gather(key = Taxon, value = Cover_Fertile, -Entered_by, -Collected_by, -Day, -Site, -Elevation, -Plot, -Notes) %>% 
-  filter(!is.na(Cover_Fertile)) %>% 
-  separate(col = Cover_Fertile, into = c("Cover", "Fertile"), sep = "_") %>% 
-  
-  # Rename species
-  mutate(Taxon = ifelse(Taxon == "poa alpigena vivipara", "poa arctica_x_pratensis", Taxon),
-         Taxon = ifelse(Taxon == "cochleria groenlandica", "cochlearia groenlandica", Taxon),
-         Taxon = ifelse(Taxon == "micranthes hieracifolia", "micranthes hieraciifolia", Taxon)) %>% 
-  
-  # Replace Draba sp1 and sp2 with Julias Draba list
-  left_join(drabas, by = c("Site", "Elevation", "Plot")) %>% 
-  mutate(Taxon = ifelse(Taxon %in% c("Draba sp1", "Draba sp2", "Draba nivalis", "Draba oxycarpa"), Taxon2, Taxon)) %>% 
-  
-  mutate(Taxon = tolower(Taxon)) %>% 
-  mutate(Elevation = as.character(Elevation)) %>% 
-  mutate(Country = "SV",
-         Year = 2018,
-         Project = "T",
-         Treatment = Site,
-         Gradient = Site,
-         Site = Elevation,
-         PlotID = Plot
-         ) %>% 
-  left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
-  select(Country, Year, Project, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Cover, Fertile, Notes, Collected_by, Entered_by) %>% 
-  
-  #filter(!is.na(Cover), !Cover == 0) %>% 
-  group_by(Country, Year, Site, Gradient, PlotID, Taxon, Cover) %>% 
-  mutate(n = n()) %>% 
-  # remove duplicates that are identical
-  slice(1) %>% 
-  # remove  duplicate where cover is not identical
-  filter(!(Gradient == "C" & Site == "5" & PlotID == "D" & Taxon == "cerastium arcticum" & Cover == 0.1)) %>% 
-  ungroup() %>% 
-  mutate(Cover = ifelse(Project == "T" & Site == "2" & Gradient == "C" & PlotID == "B" & Taxon == "oxyria digyna", 0.1, Cover))
-
-save(communitySV_2018, file = "community/data/communitySV_2018.Rdata")
-    
-
-checkCommNames <- tpl.get(unique(communityRaw1$Taxon))
-checkCommNames %>% 
-  filter(note == "was misspelled|replaced synonym") %>% select(name, original.search)
-
-
-
-# Check taxon not in traits or comm.
-setdiff(communitySV_2018$Taxon, traitsSV2018$Taxon)
-setdiff(traitsSV2018$Taxon, communitySV_2018$Taxon)
