@@ -116,15 +116,20 @@ MonthlyTemp <- tibble(YearMonth = seq(from = as.Date("2004-09-15"),
   theme_bw()
 #ggsave(MonthlyTemp, filename = "MonthlyTemp.png")
 
-# Test OTC vs CTL
+# Test OTC vs CTL in the summer
 monthlyTemp %>% 
-  mutate(Year = year(YearMonth)) %>% 
-  group_by(Site, Type) %>% 
+  mutate(Year = year(YearMonth),
+         Month = lubridate::month(YearMonth)) %>% 
+  filter(Month %in% c(6, 7, 8)) %>% 
+  group_by(Site, Type, Month) %>% 
   nest() %>% 
-  mutate(mod = map(data, ~ lmer(Value ~ Treatment + (1|PlotID), data = .x)), 
-         result = map(mod, tidy)) %>% 
-  unnest(result)
-
+  mutate(mod1 = map(data, ~ lmer(Value ~ Treatment + (1|PlotID), data = .x)),
+         result1 = map(mod1, glance),
+         mod2 = map(data, ~ lmer(Value ~ 1 + (1|PlotID), data = .x)),
+         result2 = map(mod2, glance)) %>% 
+  unnest(result1, result2) %>% 
+  mutate(Diff = AIC - AIC1) %>% select(Diff) %>% filter(abs(Diff) > 2)
+# Only for surface DRY is model including Treatment better.
 
 # Weather station plot
 DailyClimatePlot <- dailyClimate %>% 
