@@ -64,3 +64,15 @@ get_file(node = "smbqh",
          file = "PFTC4_Svalbard_2018_Draba_dictionary.xlsx",
          path = "community/data",
          remote_path = "RawData/RawData_Community")
+
+# Raw Community ITEX
+get_file(node = "smbqh",
+         file = "ENDALEN_ALL-YEARS_TraitTrain.xlsx",
+         path = "community/data",
+         remote_path = "RawData/RawData_Community")
+
+# ITEX species list
+get_file(node = "smbqh",
+         file = "Species lists_Iceland_Svalbard.xlsx",
+         path = "community/data",
+         remote_path = "RawData/RawData_Community")
