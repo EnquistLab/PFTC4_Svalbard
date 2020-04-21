@@ -11,7 +11,7 @@ ItexHeight.raw <- read_excel(path = "community/data/ENDALEN_ALL-YEARS_TraitTrain
 
 sp <- read_excel(path = "data/Inga Svala Jonsdottir ITEX/Species lists_Iceland_Svalbard.xlsx", sheet = "Endalen")
 
-coords <- read_excel(path = "Coordinates.xlsx", col_names = TRUE)
+coords <- read_excel(path = "traits/cleaned_Data/PFTC4_Svalbard_Coordinates.xlsx", col_names = TRUE)
 
 # Species names
 sp <- sp %>% 
