@@ -412,7 +412,7 @@ traitsSV2018 <- traitsSV2018 %>%
 # Gradients
 traitsGradients_SV_2018 <- traitsSV2018 %>% 
   filter(Project %in% c("T"))
-write_csv(traitsGradients_SV_2018, path = "traits/data/PFTC4_Svalbard_2018_TraitsGradients.csv", col_names = TRUE)
+write_csv(traitsGradients_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_2018_TraitsGradients.csv", col_names = TRUE)
 
 # ITEX
 traitsITEX_SV_2018 <- traitsSV2018 %>%
@@ -420,19 +420,19 @@ traitsITEX_SV_2018 <- traitsSV2018 %>%
   #select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
   mutate(Treatment = substr(PlotID, str_length(PlotID)-2, str_length(PlotID)),
          PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-"))
-write_csv(traitsITEX_SV_2018, path = "traits/data/PFTC4_Svalbard_2018_ITEX.csv", col_names = TRUE)
+write_csv(traitsITEX_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_2018_ITEX.csv", col_names = TRUE)
   
 # Mosses
 traitsGradients_Bryophytes_SV_2018 <- traitsSV2018 %>% 
   filter(Project %in% c("M")) 
-write_csv(traitsGradients_Bryophytes_SV_2018, path = "traits/data/PFTC4_Svalbard_2018_Bryo_TraitsGradients.csv", col_names = TRUE)
+write_csv(traitsGradients_Bryophytes_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_2018_Bryo_TraitsGradients.csv", col_names = TRUE)
 
 # # Saxy
 traitsSAXY_SV_2018 <- traitsSV2018 %>%
   filter(Project == "Saxy") %>%
   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>%
   mutate(Site = substr(PlotID, 1, 2))
-write_csv(traitsSAXY_SV_2018, path = "traits/data/PFTC4_Svalbard_Traits_2018_Saxy.csv", col_names = TRUE)
+write_csv(traitsSAXY_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_Traits_2018_Saxy.csv", col_names = TRUE)
 
 
 # counts
