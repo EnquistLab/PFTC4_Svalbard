@@ -38,7 +38,18 @@ get_file(node = "smbqh",
          path = "traits/data",
          remote_path = "RawData/RawData_Traits")
 
-# NEED TO ADD CHEMICAL LEAF TRAITS
+# Leaf Scans
+get_file(node = "smbqh",
+         file = "PFTC4_Svalbard_2018_LeafScans.zip",
+         path = "traits/data",
+         remote_path = "RawData/RawData_Traits")
+
+# Unzip files
+zipFile <- "traits/data/PFTC4_Svalbard_2018_LeafScans.zip"
+outDir <- "traits/data/"
+unzip(zipFile, exdir = outDir)
+
+# NEED TO ADD CHEMICAL LEAF TRAITS !!!!
 
 
 #### COMMUNITY ####

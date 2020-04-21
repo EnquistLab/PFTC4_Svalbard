@@ -1,5 +1,5 @@
-
 #### CALCULATE LEAF AREA ####
+source("rawdataCleaning/Download_Raw_Data.R")
 
 # load libraries
 #devtools::install_github("richardjtelford/LeafArea")
@@ -12,13 +12,14 @@ library("tidyverse")
 load("traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
 
 # List of scan names
-list.of.files <- dir(path = paste0("/Volumes/Ohne Titel/Leaf Scans"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+list.of.files <- dir(path = "traits/data/Leaf Scans/", pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
 
-dd <- basename(list.of.files) %>% 
-  as.tibble() %>% 
-  mutate(value = gsub(".jpeg", "", value))
-
-setdiff(dd$value, all_codes$hashcode)
+# CHECKS
+# dd <- basename(list.of.files) %>% 
+#   as_tibble() %>% 
+#   mutate(value = gsub(".jpeg", "", value))
+# 
+# setdiff(dd$value, all_codes$hashcode)
 # Only "Unknown_2018-07-20_01_05"
 
 
@@ -48,27 +49,23 @@ loop.files <-  function(files){
 #### Calculate the leaf area using run.ij and check if there are problem.
 
 # test run.ij
-run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 55, trim.pixel2 = 150, save.image = TRUE)
+# run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 55, trim.pixel2 = 150, save.image = TRUE)
 
 
 #### Run run.ij to get areas
-list.of.files <- dir(path = paste0("/Volumes/Ohne Titel/Leaf Scans"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+list.of.files <- dir(path = "traits/data/Leaf Scans/", pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+new.folder <- "traits/data/Temp/"
+output.folder <- "traits/data/Leaf_Output/"
 
-new.folder <- "/Volumes/Ohne Titel/Temp/"
-output.folder <- "/Volumes/Ohne Titel/Leaf_Output/"
-
+# Calculate leaf area
 LeafArea.raw <- plyr::ldply(list.of.files, loop.files)
 
-dim(LeafArea.raw)
-save(LeafArea.raw, file = "traits/data/LeafArea.raw.Rdata")
+# safty copy
+#save(LeafArea.raw, file = "traits/data/LeafArea.raw.Rdata")
 
-# remove duplicate leaves
-LeafArea %>% 
-  group_by(ID) %>% 
-  filter()
 
 #### Calculate leaf area
-load("traits/data/LeafArea.raw.Rdata", verbose = TRUE)
+#load("traits/data/LeafArea.raw.Rdata", verbose = TRUE)
 
 LeafArea2018 <- LeafArea.raw %>% 
   # remove leaves that were calculated double by mistake
@@ -83,21 +80,16 @@ LeafArea2018 <- LeafArea.raw %>%
   group_by(ID) %>% 
   summarise(Area_cm2 = sum(LeafArea), NumberLeavesScan = n())
 
-save(LeafArea2018, file = "traits/data/LeafArea2018.Rdata")
+write_csv(LeafArea2018, path = "traits/data/LeafArea2018.csv", col_names = TRUE)
 
 
 
 #### Sean leaf areas without loop
-
-file.list.sean <- list.files(path = "C:/Users/cpo082/Desktop/leaf
-                             data/SEAN_cropped")
-
-sean_area <- run.ij (set.directory = "C:/Users/cpo082/Desktop/leaf
-                     data/SEAN_cropped", distance.pixel = 237, known.distance = 2, log =
-                       TRUE, save.image = TRUE, low.size = 0.05)
-
-sean_cropped_LA_new <- data.frame(ID = names(unlist(sean_area
-                                                           [[2]])), LeafArea = (unlist(sean_area[[2]])))
-
-save(sean_cropped_LA_new, file = "C:/Users/cpo082/Desktop/leaf
-     data/sean_cropped_LA_new.Rdata")
+# file.list.sean <- list.files(path = "C:/Users/cpo082/Desktop/leaf
+#                              data/SEAN_cropped")
+# sean_area <- run.ij (set.directory = "C:/Users/cpo082/Desktop/leaf
+#                      data/SEAN_cropped", distance.pixel = 237, known.distance = 2, log =
+#                        TRUE, save.image = TRUE, low.size = 0.05)
+# sean_cropped_LA_new <- data.frame(ID = names(unlist(sean_area
+#                                                            [[2]])), LeafArea = (unlist(sean_area[[2]])))
+# save(sean_cropped_LA_new, file = "C:/Users/cpo082/Desktop/leaf data/sean_cropped_LA_new.Rdata")
