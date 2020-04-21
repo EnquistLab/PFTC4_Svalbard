@@ -26,8 +26,8 @@ source("rawdataCleaning/R/ImportChemicalTraits.R")
 
 #### READ IN DATA SETS ####
 coords <- read_excel(path = "traits/cleaned_Data/PFTC4_Svalbard_Coordinates.xlsx", col_names = TRUE)
-traits <- read_csv(file = "traits/data/LeafTrait_Svalbard_with_DM.csv")
-LeafArea2018 <- read_csv(file = "traits/data/PFTC4_Scalbard_Raw_LeafArea_2018.csv", col_names = TRUE)
+traits_in <- read_csv(file = "traits/data/PFTC4_Svalbard_2018_LeafTrait_with_DM.csv")
+LeafArea2018 <- read_csv(file = "traits/data/PFTC4_Svalbard_2018_Raw_LeafArea.csv", col_names = TRUE)
 
 
 ########################################################################
@@ -85,8 +85,6 @@ LeafArea2018 <- read_csv(file = "traits/data/PFTC4_Scalbard_Raw_LeafArea_2018.cs
 # Cannot fix
 # 3x stellaria longipes: plot and elev missing
 # CCK4783 equisetum arvense: plot number missing, cannot fix
-# CDW3071: It says Plot D or E; unlikely to be any of those, because there are already 3 of each plot, cannot fix
-# CVP1261: It says Plot D or E; But no cover in D or E. Could be F, cannot fix
 # CDX1924: remark is D or E; Already 3 E, and no cover in D, cannot fix
 # AWN7480: no Plot on envelope. Could be 1-CTL or 5-OTC as those only have 2 ind. Cannot fix.
 # AYU6804 oxyria digyna: Plot says 4, cannot fix
@@ -98,10 +96,12 @@ LeafArea2018 <- read_csv(file = "traits/data/PFTC4_Scalbard_Raw_LeafArea_2018.cs
 # ALI6553: assumed Plot 5-OTC because only 2 ind form this plot and LeafID fits
 # AJL5589: change from OTC to CTL. 5-OTC does not exist and only 2 leaves from 5-CTL
 # ALO7062: Plot name was 2 and changed to 2-CTL
+# CDW3071: It says Plot D or E; unlikely to be any of those, because there are already 3 of each plot, made it Plot C, only possibility
+# CVP1261: It says Plot D or E; But no cover in D or E. Could be F, so assumed it to be F
 ####################################################################################################
 
 #### CLEAN DATA ####
-traits <- traits %>% 
+traits <- traits_in %>% 
   # Fix leafID
   mutate(ID = recode(ID, "CIG85099" = "CIG8509",
                      "CHF3’094" = "CHF3094")) %>% 
@@ -193,6 +193,10 @@ traits <- traits %>%
   mutate(Plot = ifelse(ID == "ALO7062", "L-2-CTL", Plot)) %>% 
   mutate(Remark = ifelse(ID == "ALO7062", "was 2 and changed to 2-CTL", Remark)) %>%
   mutate(Plot = ifelse(ID == "BVN8783", "L-5-CTL", Plot)) %>% # fix wrong name L5-CTL
+  mutate(Plot = ifelse(ID == "CDW3071", "C", Plot),
+         Remark = ifelse(ID == "CDW3071", "assumed Plot C", Remark),
+         Plot = ifelse(ID == "CVP1261", "F", Plot),
+         Remark = ifelse(ID == "CVP1261", "assumed Plot F", Remark)) %>%
   
   # Project
   mutate(Project = ifelse(ID == "AHE5823", "T", Project)) %>% 
@@ -350,21 +354,61 @@ traitsSV2018 <- traits2018 %>%
          LDMC = ifelse(LDMC > 1, NA_real_, LDMC)) %>% 
   mutate(Flag = if_else(ID == "CCP4302", "Area cut a tiny bit", NA_character_)) %>% 
   mutate(Flag = if_else(ID %in% c("ADM0955", "AMD6577", "AME5937", "AMF5763", "AMH0895", "AOE8815", "AOT9797", "ASF0636", "ASF0636", "BLS7300", "BUR2769", "BUZ1775"), "Thickness_measure_wrong_remeasured_dry_leaf_might_be_too_small_value", NA_character_)) %>% 
-
   # Make data speak to other PFTC data
   rename(Gradient = Site, Site = Elevation, PlotID = Plot, Data_entered_by = Person_data_entered, Comment = Remark) %>% 
-    mutate(Country = "SV",
+  mutate(Country = "SV",
          Year = 2018,
-         Treatment = "C",
-         Date = ymd(paste(Year, 7, Day, sep = "-")), # makes one NA, because Day was NA
-         Project = ifelse(Gradient == "X", "X", Project)) %>%
+         Treatment = Gradient,
+         Date = ymd(paste(Year, 7, Day, sep = "-"))) %>% # makes one NA, because Day was NA
   
+  # remove 2 species where PlotID is unknown
+  filter(!(is.na(PlotID) & Site %in% c("CAS", "BIS"))) %>% 
+  # change one sp where site name was wrong (3)
+  mutate(Site = if_else(Gradient == "X" & Site == "3", "DRY", Site)) %>% 
+  
+  # Impossible to fix leaves (missing Site and/or PlotID)
+  filter(!ID %in% c("CDX1924", "AYU6804", "CUN0289", "CUO1118", "CUR9333")) %>% 
+  
+  # Fix PlotID and Treatment for ITEX
+  mutate(Treatment = if_else(Gradient == "X", substr(PlotID, str_length(PlotID)-2, str_length(PlotID)), Treatment),
+         PlotID = if_else(Project == "X", paste(Site, sub("\\-.*$","", PlotID), sep = "-"), PlotID)) %>% 
+  # fix AKZ0354
+  mutate(PlotID = if_else(ID == "AKZ0354", "8-OTC", PlotID)) %>% 
+
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
   
   select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Dry_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Flag, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
 
+
+
+### Add missing Individual_Nr for ITEX and gradients
+IndNr <- traitsSV2018 %>% 
+  filter(Gradient %in% c("B", "C", "X"),
+         Taxon != "betula nana") %>% 
+  distinct(Treatment, Site, PlotID, Taxon, Individual_nr) %>% 
+  arrange(Treatment, Site, PlotID, Taxon, Individual_nr) %>% 
+  group_by(Treatment, Site, PlotID, Taxon) %>% 
+  mutate(n = as.double(1:n())) %>% 
+  mutate(newIndNr = coalesce(Individual_nr, n)) %>% 
+  # Sometimes Ind_nr does not start with 1, Ind_nr NA, 2, then the method does not work. Solution if 2x same Ind_nr, then new + 1 (dirty trick but works :-)
+  ungroup() %>% 
+  group_by(Treatment, Site, PlotID, Taxon, newIndNr) %>% 
+  mutate(nx = 1:n()) %>% 
+  mutate(newIndNr = if_else(nx == 2, newIndNr + 1, newIndNr)) %>% 
+  ungroup() %>% 
+  # Check again
+  # group_by(Treatment, Site, PlotID, Taxon, new) %>% 
+  # mutate(nx2 = n()) %>% 
+  # filter(nx2 > 1) %>% 
+  select(-n, -nx)
   
+# Replace Ind
+traitsSV2018 <- traitsSV2018 %>% 
+  left_join(IndNr, by = c("Treatment", "Site", "PlotID", "Taxon", "Individual_nr")) %>% 
+  mutate(Individual_nr = newIndNr) %>% 
+  select(-newIndNr) %>% filter(is.na(Individual_nr))
+
 
 #### CHECK TRAIT NAMES WITH TNRS ####
 # checkTraitNames <- tpl.get(unique(traitsSV2018$Taxon))
@@ -406,7 +450,7 @@ traitsSV2018 <- traits2018 %>%
 traitsSV2018 <- traitsSV2018 %>% 
   left_join(cnp_data, by = c("ID", "Country"))
 
-  
+
 
 #### DIVID DATA INTO GRADIEN AND ITEX ####
 # Gradients
@@ -415,11 +459,10 @@ traitsGradients_SV_2018 <- traitsSV2018 %>%
 write_csv(traitsGradients_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_2018_TraitsGradients.csv", col_names = TRUE)
 
 # ITEX
+# 3 ind of Betula nana in the data, no Site, PlotID info etc.
 traitsITEX_SV_2018 <- traitsSV2018 %>%
   filter(Project == "X") %>% 
-  #select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
-  mutate(Treatment = substr(PlotID, str_length(PlotID)-2, str_length(PlotID)),
-         PlotID = paste(Treatment, sub("\\-.*$","", PlotID), sep = "-"))
+  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient, -Treatment)
 write_csv(traitsITEX_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_2018_ITEX.csv", col_names = TRUE)
   
 # Mosses
