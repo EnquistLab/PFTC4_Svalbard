@@ -404,7 +404,7 @@ traitsSV2018 <- traits2018 %>%
 
 #### JOIN CNP AND TRAITS DATA ####
 traitsSV2018 <- traitsSV2018 %>% 
-  left_join(cnp_data, by = "ID")
+  left_join(cnp_data, by = c("ID", "Country"))
 
   
 
@@ -436,6 +436,6 @@ write_csv(traitsSAXY_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_Traits_
 
 
 # counts
-dim(traits2018) # 1693
-traits2018 %>% distinct(Taxon) # 44 species
+dim(traits2018) # 1696
+traits2018 %>% distinct(Taxon) # 45 species
 traits2018 %>% group_by(Taxon) %>% count() %>% pn

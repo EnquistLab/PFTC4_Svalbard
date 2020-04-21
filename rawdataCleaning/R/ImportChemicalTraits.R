@@ -212,7 +212,9 @@ droneID <- sheets_read(ss = "1hUslQ13FohAdfD7HCMWdqiEKpWhLdYmaRfMeH7Wp0O4", shee
 
 # join with phosphorus
 cnp_data_all <- CorrectedValues %>% 
-  left_join(cn_data, by = c("ID", "Country", "Batch"))
+  left_join(cn_data, by = c("ID", "Country", "Batch")) %>% 
+  filter(Country == "Svalbard") %>% # need to figure out where to filter for Country, but here is fine for now
+  mutate(Country = "SV") # to match the leaf traits
 
 # remove drone leaves
 cnp_data <- cnp_data_all %>% 
