@@ -406,8 +406,8 @@ IndNr <- traitsSV2018 %>%
 # Replace Ind
 traitsSV2018 <- traitsSV2018 %>% 
   left_join(IndNr, by = c("Treatment", "Site", "PlotID", "Taxon", "Individual_nr")) %>% 
-  mutate(Individual_nr = newIndNr) %>% 
-  select(-newIndNr) %>% filter(is.na(Individual_nr))
+  mutate(Individual_nr = if_else(Gradient %in% c("B", "C", "X"), newIndNr, Individual_nr)) %>% 
+  select(-newIndNr)
 
 
 #### CHECK TRAIT NAMES WITH TNRS ####
@@ -461,8 +461,8 @@ write_csv(traitsGradients_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_20
 # ITEX
 # 3 ind of Betula nana in the data, no Site, PlotID info etc.
 traitsITEX_SV_2018 <- traitsSV2018 %>%
-  filter(Project == "X") %>% 
-  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient, -Treatment)
+  filter(Gradient == "X") %>% 
+  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient)
 write_csv(traitsITEX_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_2018_ITEX.csv", col_names = TRUE)
   
 # Mosses
