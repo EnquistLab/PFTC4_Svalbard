@@ -50,6 +50,15 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
 write_csv(CommunitySV_ITEX_2003_2015, path = "community/cleaned_data/ITEX_Svalbard_2003_2015_Community_cleaned.csv")
 
 
+# Check community data over time
+CommunitySV_ITEX_2003_2015 %>% 
+  ggplot(aes(x = Year, y = Abundance, colour = Taxon)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap( ~ PlotID) +
+  theme(legend.position = "none")
+
+
 
 ### CHECK SPECIES NAMES ###
 # checks <- tpl.get(unique(CommunitySV_ITEX_2003_2015$Taxon))
