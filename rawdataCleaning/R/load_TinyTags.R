@@ -1,10 +1,10 @@
 ####################################
-  #### CLEAN RAW TINYTAG DATA ####
+#### CLEAN RAW TINYTAG DATA ####
 ####################################
 
 # needs libraries loaded in "climate/R/Merge_ClimateData.R"
 
-ColumnNames <- read_excel(path = "climate/data/DATA_ITEX_2015_2018/TinyTag_loggers/2005 Temp Data.xls", sheet = "DATA", col_names = FALSE) %>% 
+ColumnNames <- read_excel(path = "climate/raw_data/DATA_ITEX_2015_2018/TinyTag_loggers/2005 Temp Data.xls", sheet = "DATA", col_names = FALSE) %>% 
   slice(1:5) %>% 
   t() %>% 
   as_tibble() %>% 
@@ -21,7 +21,7 @@ ColumnNames <- read_excel(path = "climate/data/DATA_ITEX_2015_2018/TinyTag_logge
   t() %>% 
   as_tibble()
 
-dat <- read_excel(path = "climate/data/DATA_ITEX_2015_2018/TinyTag_loggers/2005 Temp Data.xls", sheet = "DATA", col_names = FALSE, skip = 7) %>% 
+dat <- read_excel(path = "climate/raw_data/DATA_ITEX_2015_2018/TinyTag_loggers/2005 Temp Data.xls", sheet = "DATA", col_names = FALSE, skip = 7) %>% 
   select(-"...52")
 colnames(dat) <- ColumnNames
 

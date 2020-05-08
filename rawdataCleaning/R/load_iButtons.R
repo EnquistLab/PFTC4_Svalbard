@@ -1,12 +1,12 @@
 ####################################
-  #### CLEAN RAW IBUTTON DATA ####
+#### CLEAN RAW IBUTTON DATA ####
 ####################################
 
 # Load meta data ITEX
 load("metaItex.Rdata")
 
 # Read in raw files and clean
-ibutton <- list.files("climate/data/DATA_ITEX_2015_2018/Plots_iButtons", recursive = TRUE, pattern = "\\.csv$", full.names = TRUE) %>%
+ibutton <- list.files("climate/raw_data/DATA_ITEX_2015_2018/Plots_iButtons", recursive = TRUE, pattern = "\\.csv$", full.names = TRUE) %>%
   grep(pattern = "201608-201610|bis9|2016 downloads", x = ., invert = TRUE, value = TRUE) %>% 
   set_names(.) %>% 
   map_df(read.csv, skip = 19, stringsAsFactors = FALSE, .id = "files") %>% 

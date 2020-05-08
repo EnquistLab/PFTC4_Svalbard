@@ -125,7 +125,7 @@ traits <- traits_in %>%
          ID = gsub("CIG850", "CIG8509", ID),
          ID = gsub("CMP9385", "CMP9835", ID),
          ID = gsub("CIG85099", "CIG8509", ID)) %>% 
-
+  
   #mutate(Date = dmy(paste(Day, "07-2018", sep = "-"))) %>% 
   mutate(Site = ifelse(Site == "x", "X", Site)) %>% 
   mutate(Site = ifelse(ID == "BWS2352", "X", Site)) %>% 
@@ -231,7 +231,7 @@ traits2018 <- traits %>%
   left_join(LeafArea2018, by = "ID") %>% 
   mutate(Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% # NA's introduced here, because characters (bulk)
   mutate(NrLeaves = ifelse(is.na(Bulk_nr_leaves), NumberLeavesScan, Bulk_nr_leaves)) %>% 
-
+  
   # Mark 24 leaves with missing area
   # For some leaf area checkbox was not checked
   # AEB3831 was leaf missing
@@ -280,7 +280,7 @@ traitsSV2018 <- traits2018 %>%
   mutate(Dry_Mass_g = ifelse(ID == "AUP7141", 0.011, Dry_Mass_g),
          Dry_Mass_g = ifelse(ID == "AGD0525", 0.0066, Dry_Mass_g),
          Dry_Mass_g = ifelse(ID == "AKI3166", 0.012, Dry_Mass_g),
-         Dry_Mass_g = ifelse(ID == "AEA5561", 0.023, Dry_Mass_g),) %>% 
+         Dry_Mass_g = ifelse(ID == "AEA5561", 0.023, Dry_Mass_g)) %>% 
   
   # Replace Area and Thickness with AQL4331, because leaf was mixed after scannig, deltet AQL4331, because leaf was lost
   mutate(Leaf_Area_cm2 = ifelse(ID == "AEB3831", 2.804, Leaf_Area_cm2),
@@ -302,7 +302,7 @@ traitsSV2018 <- traits2018 %>%
   
   # Equisetum does not need leaf number = > Leaf nr = 1 because of calculations below
   mutate(NrLeaves = ifelse(Genus == "equisetum", 1, NrLeaves)) %>% 
-
+  
   # Calculate values on the leaf level (mostly bulk samples)
   rename(Wet_Mass_Total_g = Wet_Mass_g,
          Dry_Mass_Total_g = Dry_Mass_g,
@@ -315,7 +315,7 @@ traitsSV2018 <- traits2018 %>%
   # Only one leaf in the bag; wet weight probably 6 leaves, dry weight will be only one leaf
   # Nees multiplying by 6, becaue leaf nr has been changed to 1
   mutate(Wet_Mass_g = if_else(ID == "BMN6819", Wet_Mass_g / 6, Wet_Mass_g)) %>% 
-
+  
   # CMP9835
   mutate(Leaf_Thickness_1_mm = if_else(ID == "CMP9835", NA_real_, Leaf_Thickness_1_mm),
          Leaf_Thickness_2_mm = if_else(ID == "CMP9835", NA_real_, Leaf_Thickness_2_mm),
@@ -328,13 +328,13 @@ traitsSV2018 <- traits2018 %>%
   mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
          SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
          LDMC = Dry_Mass_g / Wet_Mass_g) %>% 
-
+  
   # Measures for the mosses
   mutate(Length_Ave_Moss_cm = (Length_1_cm + Length_2_cm + Length_3_cm)/3,
          GreenLength_Ave_Moss_cm = (GreenLength_1_cm + GreenLength_2_cm + GreenLength_3_cm)/3) %>% 
-        # should probably use something like this
-         #Length_Ave_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE)),
-         #GreenLength_Ave_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>% 
+  # should probably use something like this
+  #Length_Ave_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE)),
+  #GreenLength_Ave_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>% 
   
   # Flags and filter unrealistic trait values
   mutate(Dry_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_g),
@@ -374,7 +374,7 @@ traitsSV2018 <- traits2018 %>%
          PlotID = if_else(Project == "X", paste(Site, sub("\\-.*$","", PlotID), sep = "-"), PlotID)) %>% 
   # fix AKZ0354
   mutate(PlotID = if_else(ID == "AKZ0354", "8-OTC", PlotID)) %>% 
-
+  
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>% 
   
@@ -395,6 +395,7 @@ IndNr <- traitsSV2018 %>%
   ungroup() %>% 
   group_by(Treatment, Site, PlotID, Taxon, newIndNr) %>% 
   mutate(nx = 1:n()) %>% 
+  ungroup() %>% 
   mutate(newIndNr = if_else(nx == 2, newIndNr + 1, newIndNr)) %>% 
   ungroup() %>% 
   # Check again
@@ -402,7 +403,7 @@ IndNr <- traitsSV2018 %>%
   # mutate(nx2 = n()) %>% 
   # filter(nx2 > 1) %>% 
   select(-n, -nx)
-  
+
 # Replace Ind
 traitsSV2018 <- traitsSV2018 %>% 
   left_join(IndNr, by = c("Treatment", "Site", "PlotID", "Taxon", "Individual_nr")) %>% 
@@ -464,7 +465,7 @@ traitsITEX_SV_2018 <- traitsSV2018 %>%
   filter(Gradient == "X") %>% 
   select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient)
 write_csv(traitsITEX_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_2018_ITEX.csv", col_names = TRUE)
-  
+
 # Mosses
 traitsGradients_Bryophytes_SV_2018 <- traitsSV2018 %>% 
   filter(Project %in% c("M")) 

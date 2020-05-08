@@ -69,7 +69,7 @@ p <- p %>%
 
 # pull of standard, calculate R2, choose standard for absorbance curve, make regression and plot
 standard_concentration <- tibble(Standard = c(0, 2, 4, 8, 12, 16),
-                                   Concentration = c(0, 0.061, 0.122, 0.242, 0.364, 0.484))
+                                 Concentration = c(0, 0.061, 0.122, 0.242, 0.364, 0.484))
 Standard <- p %>% 
   select(Country, Batch, ID, Sample_Absorbance) %>% 
   filter(ID %in% c("Standard1", "Standard2")) %>% 
@@ -93,62 +93,62 @@ Standard <- p %>%
 # Choose standard and make model
 ModelResult <- Standard %>% 
   mutate(correlation = map_dbl(standard, ~ if(length(.x$Sample_Absorbance > 1))
-                                             {cor(.x$Sample_Absorbance, .x$Concentration, use = "pair")}
-                                             else{NA_real_})) %>% 
+  {cor(.x$Sample_Absorbance, .x$Concentration, use = "pair")}
+  else{NA_real_})) %>% 
   group_by(Country, Batch) %>% 
   slice(which.max(correlation)) %>% 
   mutate(fit = map(standard, ~lm(Concentration ~ Sample_Absorbance, .)))
-    
-    
+
+
 # Calculate Mean, sd, coeficiant variability for each leaf and flag data
 p2 <- p %>% 
-    filter(!ID %in% c("Standard1", "Standard2"),
-           # remove samples without mass
-           !is.na(Sample_Mass)) %>% 
-    group_by(Country, Batch) %>% 
-    nest(data = c(ID:Name_measured)) %>% 
-    # add estimate from model
-    left_join(ModelResult %>% select(-ID), by = c("Country", "Batch"))
+  filter(!ID %in% c("Standard1", "Standard2"),
+         # remove samples without mass
+         !is.na(Sample_Mass)) %>% 
+  group_by(Country, Batch) %>% 
+  nest(data = c(ID:Name_measured)) %>% 
+  # add estimate from model
+  left_join(ModelResult %>% select(-ID), by = c("Country", "Batch"))
 
-  
+
 OriginalValues <- p2 %>% 
-    mutate(data = map2(.x = data, .y = fit, ~ mutate(.x, Sample_yg_ml = predict(.y, newdata = select(.x, Sample_Absorbance))))) %>% 
-    unnest(data) %>% 
-    mutate(Pmass = Sample_yg_ml * Volume_of_Sample_ml,
-           Pconc = Pmass / Sample_Mass * 100) %>% 
-    # Calculate mean, sd, coefficient of variation
-    group_by(Batch, Country, ID) %>% 
-    mutate(meanP = mean(Pconc, na.rm = TRUE), 
-           sdP = sd(Pconc, na.rm = TRUE),
-           CoeffVarP = sdP / meanP) %>% 
-    # flag data
-    mutate(Flag_orig = ifelse(CoeffVarP >= 0.2, "flag", ""))
+  mutate(data = map2(.x = data, .y = fit, ~ mutate(.x, Sample_yg_ml = predict(.y, newdata = select(.x, Sample_Absorbance))))) %>% 
+  unnest(data) %>% 
+  mutate(Pmass = Sample_yg_ml * Volume_of_Sample_ml,
+         Pconc = Pmass / Sample_Mass * 100) %>% 
+  # Calculate mean, sd, coefficient of variation
+  group_by(Batch, Country, ID) %>% 
+  mutate(meanP = mean(Pconc, na.rm = TRUE), 
+         sdP = sd(Pconc, na.rm = TRUE),
+         CoeffVarP = sdP / meanP) %>% 
+  # flag data
+  mutate(Flag_orig = ifelse(CoeffVarP >= 0.2, "flag", ""))
 
 
 # wheat: check values, flag/remove, calculate convertion factor
 RedWheatValue <- 0.137
 CorrectionFactor <- OriginalValues %>% 
-    filter(ID %in% c("Hard Red Spring Wheat Flour")) %>% 
-    mutate(P_Correction = Pconc / RedWheatValue) %>% 
-    # Calculate mean, sd, coefficient of variation
-    group_by(Batch, Country, ID) %>% 
-    summarise(Correction_Factor = mean(P_Correction, na.rm = TRUE)) %>% 
-    select(-ID)
+  filter(ID %in% c("Hard Red Spring Wheat Flour")) %>% 
+  mutate(P_Correction = Pconc / RedWheatValue) %>% 
+  # Calculate mean, sd, coefficient of variation
+  group_by(Batch, Country, ID) %>% 
+  summarise(Correction_Factor = mean(P_Correction, na.rm = TRUE)) %>% 
+  select(-ID)
 
 
 # Use Correction Factor on data
 CorrectedValues <- OriginalValues %>% 
-    filter(!ID %in% c("Hard Red Spring Wheat Flour")) %>% 
-    left_join(CorrectionFactor, by = c("Batch", "Country")) %>% 
-    mutate(Pconc_Corrected = Pconc * Correction_Factor) %>% 
-    # Calculate mean, sd, coefficient of variation
-    group_by(Batch, Country, ID) %>% 
-    summarise(P_percent = mean(Pconc_Corrected, na.rm = TRUE), 
-           sdP_Corrected = sd(Pconc_Corrected, na.rm = TRUE),
-           CoeffVarP_Corrected = sdP_Corrected / P_percent,
-           N_replications = n()) %>% 
-    # flag data
-    mutate(Flag_corrected = ifelse(CoeffVarP_Corrected >= 0.2, "flag", ""))
+  filter(!ID %in% c("Hard Red Spring Wheat Flour")) %>% 
+  left_join(CorrectionFactor, by = c("Batch", "Country")) %>% 
+  mutate(Pconc_Corrected = Pconc * Correction_Factor) %>% 
+  # Calculate mean, sd, coefficient of variation
+  group_by(Batch, Country, ID) %>% 
+  summarise(P_percent = mean(Pconc_Corrected, na.rm = TRUE), 
+            sdP_Corrected = sd(Pconc_Corrected, na.rm = TRUE),
+            CoeffVarP_Corrected = sdP_Corrected / P_percent,
+            N_replications = n()) %>% 
+  # flag data
+  mutate(Flag_corrected = ifelse(CoeffVarP_Corrected >= 0.2, "flag", ""))
 
 
 
@@ -161,14 +161,14 @@ list_files <- dir(path = "traits/data/IsotopeData/", pattern = "\\.xlsx$", full.
 cn_isotopes <- list_files %>% 
   set_names() %>% 
   map(., ~ {sheetname <- excel_sheets(.x)
-sheetname <- if(length(sheetname) == 1) {
-  sheetname
-} else {
-  s <- str_subset(sheetname, fixed("REPORT("))
-  if(length(s) == 0){s <- sheetname[1]}
-  s
-}
-read_excel(.x, skip = 13, sheet = sheetname, na = c("NA", "REPEAT", "small", "See below", "#WERT!", "4X"))}) %>%
+  sheetname <- if(length(sheetname) == 1) {
+    sheetname
+  } else {
+    s <- str_subset(sheetname, fixed("REPORT("))
+    if(length(s) == 0){s <- sheetname[1]}
+    s
+  }
+  read_excel(.x, skip = 13, sheet = sheetname, na = c("NA", "REPEAT", "small", "See below", "#WERT!", "4X"))}) %>%
   map_df(~ {select(.,-c(...12:...17)) %>% 
       slice(1:grep("Analytical precision, 1-sigma", ...1)-1) %>% 
       filter(!is.na(...1)) %>% # removing empty rows
@@ -178,42 +178,66 @@ read_excel(.x, skip = 13, sheet = sheetname, na = c("NA", "REPEAT", "small", "Se
   }, .id = "filename") %>% 
   # remove one row
   filter(!c(Samples_Nr == 2 & filename == "traits/data/IsotopeData//Enquist_18NORWAY-3_119-REPORT.xlsx")) %>% 
-  mutate(Samples_Nr = if_else(Samples_Nr == "2*", "2", Samples_Nr))
+  mutate(Samples_Nr = if_else(Samples_Nr == "2*", "2", Samples_Nr)) %>% 
+  mutate(Site = gsub("Norway|NORWAY", "Svalbard", Site),
+         Individual_Nr = gsub("AHN3439", "AHN2439", Individual_Nr)) %>% 
+  # remove wrong measurements (can remove if C is NA)
+  filter(!is.na(C_percent))
+
+# check duplicates
+# cn_isotopes %>% 
+#   group_by(Individual_Nr) %>% 
+#   mutate(n = n()) %>% 
+#   filter(n > 1) %>% 
+#   arrange(Individual_Nr) %>% print(n = Inf)
+
 
 # Check ids
 #setdiff(cn_isotopes$Individual_Nr, all_codes$hashcode)
 
 # CN mass data and join
 cn_mass <- sheets_read(ss = "1f2mDGLD8vH0ZxywC2YkfZTGEzspfCbsBVOV5osWIDBI", sheet = "CN") %>% 
-  mutate(Column = as.character(Column))
-# cn_mass <- read_csv(file = "traits/data/CNP_Template - CN.csv") %>% 
-#   mutate(Column = as.character(Column))
+  mutate(Column = as.character(Column)) %>% 
+  filter(!is.na(Individual_Nr))
 #setdiff(cn_mass$Individual_Nr, all_codes$hashcode)
 
-cn_data <- cn_mass %>% 
-  mutate(Individual_Nr = gsub("BOO4539", "BOO4359", Individual_Nr)) %>% 
-  mutate(Samples_Nr = as.character(Samples_Nr)) %>% 
-  left_join(cn_isotopes, by = c("Samples_Nr", "Individual_Nr", "Site", "Row", "Column")) %>%
+
+cn_data <- cn_isotopes %>% 
   mutate(Individual_Nr = gsub("CLZ8080", "CLZ8280", Individual_Nr),
          Individual_Nr = gsub("BXE31110", "BXE3110", Individual_Nr),
          Individual_Nr = gsub("BCK00050", "BCK0050", Individual_Nr),
          Individual_Nr = gsub("BBWB9735", "BWB9735", Individual_Nr),
          Individual_Nr = gsub("BW7574", "BWO7574", Individual_Nr),
          Individual_Nr = gsub("BOO4539", "BOO4359", Individual_Nr)) %>% 
-  rename(Row_cn = Row, Column_cn = Column, Sample_Mass_CN = Sample_Mass, ID = Individual_Nr, Country = Site, Date_weighed_CN = Date_weighed, Name_weighed_CN = Name_weighed) %>% 
-  filter(!is.na(ID),
-         !is.na(C_percent))
+  rename(ID = Individual_Nr, Country = Site)
 
+### Not sure why we need the cn mass data!!!
+#setdiff(cn_mass$Individual_Nr, cn_isotopes$Individual_Nr) # none
+# cn_data <- cn_mass %>% 
+#   mutate(Samples_Nr = as.character(Samples_Nr)) %>% 
+#   anti_join(cn_isotopes, by = c("Samples_Nr", "Individual_Nr", "Site", "Row", "Column")) %>%
+#   mutate(Individual_Nr = gsub("CLZ8080", "CLZ8280", Individual_Nr),
+#          Individual_Nr = gsub("BXE31110", "BXE3110", Individual_Nr),
+#          Individual_Nr = gsub("BCK00050", "BCK0050", Individual_Nr),
+#          Individual_Nr = gsub("BBWB9735", "BWB9735", Individual_Nr),
+#          Individual_Nr = gsub("BW7574", "BWO7574", Individual_Nr),
+#          Individual_Nr = gsub("BOO4539", "BOO4359", Individual_Nr)) %>% 
+#   rename(Row_cn = Row, Column_cn = Column, Sample_Mass_CN = Sample_Mass, ID = Individual_Nr, Country = Site, Date_weighed_CN = Date_weighed, Name_weighed_CN = Name_weighed) %>% 
+#   filter(!is.na(C_percent))
 #setdiff(cn_data$ID, all_codes$hashcode)
 
 # drone IDs
 droneID <- sheets_read(ss = "1hUslQ13FohAdfD7HCMWdqiEKpWhLdYmaRfMeH7Wp0O4", sheet = "Tabellenblatt2") %>% 
   select(Project, ID, Wet_mass_g, Dry_mass_g) 
 
+CorrectedValues %>% anti_join(cn_data, by = "ID") %>% print(n = Inf)
+cn_data %>% anti_join(CorrectedValues, by = "ID") %>% print(n = Inf)
+
 # join with phosphorus
 cnp_data_all <- CorrectedValues %>% 
-  left_join(cn_data, by = c("ID", "Country", "Batch")) %>% 
+  full_join(cn_data, by = c("ID", "Country")) %>% 
   filter(Country == "Svalbard") %>% # need to figure out where to filter for Country, but here is fine for now
+  ungroup() %>% 
   mutate(Country = "SV") # to match the leaf traits
 
 # remove drone leaves
@@ -227,7 +251,7 @@ DroneLeaves <- droneID %>%
          ID = gsub("DEG1439", "DEG1493", ID),
          ID = gsub("DB04590", "DBO4590", ID)) %>% 
   left_join(cnp_data_all, by = "ID") %>% 
-  select(Project, Country, ID:Dry_mass_g, P_percent, C_percent:dC13_permil, Batch, sdP_Corrected:filename, Remark_CN)
+  select(Project, Country, ID:Dry_mass_g, P_percent,C_percent:dC13_permil, Batch, sdP_Corrected:filename, Remark_CN)
 write_csv(DroneLeaves, path = "traits/data/PFTC4_Svalbard_2018_DroneLeaves.csv")
 
 

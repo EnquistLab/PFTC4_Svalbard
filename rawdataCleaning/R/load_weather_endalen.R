@@ -9,7 +9,7 @@ read_xl_csv <- function(f){
   if(grepl("csv$", f)){
     read.csv(f, skip = 1, stringsAsFactors = FALSE, check.names = FALSE)
   } else if(grepl("xls", f)){
-      read_excel(f, skip = 1, sheet = 1)
+    read_excel(f, skip = 1, sheet = 1)
   } else {
     stop("unknown file type")
   }
@@ -17,9 +17,9 @@ read_xl_csv <- function(f){
 
 
 # Special case
-specialFile <- read_xlsx(path = "climate/data/DATA_ITEX_2015_2018/Hobo_weather st/2018 downloads/20180919/Endalen_Weatherstn_SSE.xlsx", skip = 1) %>% 
+specialFile <- read_xlsx(path = "climate/raw_data/DATA_ITEX_2015_2018/Hobo_weather st/2018 downloads/20180919/Endalen_Weatherstn_SSE.xlsx", skip = 1) %>% 
   select(-`#`, -`Time, GMT+00:00`) %>%
-  mutate(file = "climate/data/DATA_ITEX_2015_2018/Hobo_weather st/2018 downloads/20180919/Endalen_Weatherstn_SSE.xlsx") %>% 
+  mutate(file = "climate/raw_data/DATA_ITEX_2015_2018/Hobo_weather st/2018 downloads/20180919/Endalen_Weatherstn_SSE.xlsx") %>% 
   rename(
     DateTime = Date,
     PAR = `PAR, uE (LGR S/N: 2271742, SEN S/N: 2008892, LBL: Weatherstn_SSE)`,
@@ -29,7 +29,7 @@ specialFile <- read_xlsx(path = "climate/data/DATA_ITEX_2015_2018/Hobo_weather s
     SolarRadiation = `Solar Radiation, W/m² (LGR S/N: 2271742, SEN S/N: 10663215, LBL: Weatherstn_SSE)`)
 
 # Reading in rest of csv and xls files - into one dataframe
-WeatherStation <- list.files(path = "climate/data/DATA_ITEX_2015_2018/Hobo_weather st/", recursive = TRUE, full.names = TRUE, pattern = "csv$|\\.xls") %>% 
+WeatherStation <- list.files(path = "climate/raw_data/DATA_ITEX_2015_2018/Hobo_weather st/", recursive = TRUE, full.names = TRUE, pattern = "csv$|\\.xls") %>% 
   grep(pattern = "20180919", x = ., invert = TRUE, value = TRUE) %>% # special case
   grep(pattern = "SSE", x = ., value = TRUE) %>% 
   grep(pattern = "~",x = ., invert = TRUE, value = TRUE) %>% 

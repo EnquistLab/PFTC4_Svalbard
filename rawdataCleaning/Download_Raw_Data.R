@@ -3,13 +3,13 @@
 #install.packages("remotes")
 #remotes::install_github("Plant-Functional-Trait-Course/PFTCFunctions")
 library("PFTCFunctions")
+library("googlesheets4")
 
 #### CLIMATE ####
 # Raw climate data
-get_file(node = "smbqh",
-         file = "Climate_Data_ITEX_2015_2018.zip",
-         path = "climate/raw_data",
-         remote_path = "RawData/RawData_Climate")
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "raw_climate", 
+                   path = "climate/raw_data")
 
 # Unzip files
 zipFile <- "climate/raw_data/Climate_Data_ITEX_2015_2018.zip"
@@ -19,32 +19,18 @@ unzip(zipFile, exdir = outDir)
 
 #### META DATA ####
 # Meta data
-get_file(node = "smbqh",
-         file = "PFTC4_Svalbard_Coordinates.xlsx",
-         path = "traits/cleaned_Data",
-         remote_path = "MetaData")
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "meta", 
+                   path = "traits/cleaned_Data")
 
 
 #### TRAITS ####
 # Raw leaf trait data
-get_file(node = "smbqh",
-         file = "LeafTrait_Svalbard_with_DM.csv",
-         path = "traits/data",
-         remote_path = "RawData/RawData_Traits")
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "raw_traits", 
+                   path = "traits/data")
 
-# Raw leaf area data
-get_file(node = "smbqh",
-         file = "PFTC4_Scalbard_Raw_LeafArea_2018.csv",
-         path = "traits/data",
-         remote_path = "RawData/RawData_Traits")
-
-# Leaf Scans
-get_file(node = "smbqh",
-         file = "PFTC4_Svalbard_2018_LeafScans.zip",
-         path = "traits/data",
-         remote_path = "RawData/RawData_Traits")
-
-# Unzip files
+# Unzip Leaf Scans
 zipFile <- "traits/data/PFTC4_Svalbard_2018_LeafScans.zip"
 outDir <- "traits/data/"
 unzip(zipFile, exdir = outDir)
@@ -54,25 +40,6 @@ unzip(zipFile, exdir = outDir)
 
 #### COMMUNITY ####
 # Raw community data
-get_file(node = "smbqh",
-         file = "PFTC4_Svalbard_2018_Community.csv",
-         path = "community/data",
-         remote_path = "RawData/RawData_Community")
-
-# Draba dictionary
-get_file(node = "smbqh",
-         file = "PFTC4_Svalbard_2018_Draba_dictionary.xlsx",
-         path = "community/data",
-         remote_path = "RawData/RawData_Community")
-
-# Raw Community ITEX
-get_file(node = "smbqh",
-         file = "ENDALEN_ALL-YEARS_TraitTrain.xlsx",
-         path = "community/data",
-         remote_path = "RawData/RawData_Community")
-
-# ITEX species list
-get_file(node = "smbqh",
-         file = "Species lists_Iceland_Svalbard.xlsx",
-         path = "community/data",
-         remote_path = "RawData/RawData_Community")
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "raw_community", 
+                   path = "community/data")
