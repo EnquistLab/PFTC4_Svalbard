@@ -9,7 +9,7 @@ library("tpl")
 # Read in files
 ItexAbundance.raw <- read_excel(path = "community/data/ENDALEN_ALL-YEARS_TraitTrain.xlsx", sheet = "SP-ABUND")
 ItexHeight.raw <- read_excel(path = "community/data/ENDALEN_ALL-YEARS_TraitTrain.xlsx", sheet = "HEIGHT")
-sp <- read_excel(path = "ommunity/data/Species lists_Iceland_Svalbard.xlsx", sheet = "Endalen")
+sp <- read_excel(path = "community/data/Species lists_Iceland_Svalbard.xlsx", sheet = "Endalen")
 
 
 # Species names
@@ -21,7 +21,7 @@ sp <- sp %>%
 
 # Community data
 CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>% 
-  gather(key = Spp, value = Abundance, -SUBSITE, -TREATMENT, -PLOT, -YEAR, -`TOTAL-L`, -LITTER, -REINDRO, -BIRDRO, -ROCK, -SOIL) %>%
+  gather(key = Spp, value = Abundance, -SUBSITE, -TREATMENT, -PLOT, -YEAR, -`TOTAL-L`, -LITTER, -REINDRO, -BIRDRO, -ROCK, -SOIL, -CRUST) %>%
   filter(Abundance > 0) %>% 
   rename(Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Year = YEAR) %>% 
   mutate(Site2 = substr(Site, 5, 5),
@@ -29,9 +29,11 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
          PlotID = gsub("L", "", PlotID)) %>% 
   # I think we do not need/want H sites
   filter(Site2 == "L") %>% 
-  select(-Site2, -`TOTAL-L`, -LITTER, -REINDRO, -BIRDRO, -ROCK, -SOIL) %>% 
+  select(-Site2, -`TOTAL-L`, -LITTER, -REINDRO, -BIRDRO, -ROCK, -SOIL, -CRUST) %>% 
   left_join(sp, by = c("Spp")) %>% 
-  mutate(Genus = tolower(Genus), Species = tolower(Species),
+  mutate(Genus = tolower(Genus), 
+         Species = tolower(Species),
+         Species = if_else(is.na(Species), "sp", Species),
          Taxon = paste(Genus, Species, sep = " ")) %>%
   mutate(Taxon = ifelse(Taxon == "NA oppositifolia", "saxifraga oppositifolia", Taxon)) %>% 
   mutate(Taxon = ifelse(Taxon == "festuca richardsonii", "festuca rubra", Taxon),
@@ -41,10 +43,12 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
          Taxon = ifelse(Taxon == "aulocomnium turgidum", "aulacomnium turgidum", Taxon),
          Taxon = ifelse(Taxon == "oncophorus whalenbergii", "oncophorus wahlenbergii", Taxon),
          Taxon = ifelse(Taxon == "racomitrium canescence", "niphotrichum canescens", Taxon),
-         Taxon = ifelse(Taxon == "pedicularis dashyantha", "pedicularis dasyantha", Taxon)) %>% 
+         Taxon = ifelse(Taxon == "pedicularis dashyantha", "pedicularis dasyantha", Taxon),
+         FunctionalGroup = if_else(Taxon == "ochrolechia frigida", "fungi", FunctionalGroup)) %>% 
   select(-Genus, -Species)
 
 write_csv(CommunitySV_ITEX_2003_2015, path = "community/cleaned_data/ITEX_Svalbard_2003_2015_Community_cleaned.csv")
+
 
 
 ### CHECK SPECIES NAMES ###
