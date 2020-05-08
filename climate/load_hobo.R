@@ -32,13 +32,13 @@ ggplot(data, mapping = aes( x = date_time, y = temp)) +
   geom_line()
 
 ####hobo weather stations####
-  
+
 
 read_xl_csv <- function(f){
   if(grepl("csv$", f)){
     read.csv(f, skip = 1, stringsAsFactors = FALSE, check.names = FALSE)
   } else if(grepl("xls", f)){
-      read_excel(f, skip = 1, sheet = 1)
+    read_excel(f, skip = 1, sheet = 1)
   } else {
     stop("unknown file type")
   }
@@ -69,7 +69,7 @@ hobo <- list.files(path = "climate/data/DATA_ITEX_2015-18/Hobo_weather st/", rec
     wat_cont2 = `Water Content, mÂ³/mÂ³ (LGR S/N: 2271742, SEN S/N: 2268271, LBL: Weatherstn_SSE)`, 
     temp2 = `Temp, Â°C (LGR S/N: 2271742, SEN S/N: 10655574, LBL: Weatherstn_SSE)`,
     sol_rad2 = `Solar Radiation, W/mÂ² (LGR S/N: 2271742, SEN S/N: 10663215, LBL: Weatherstn_SSE)`) %>% 
-    
+  
   mutate(
     wat_cont = coalesce(`wat_cont1`, `wat_cont2`), 
     temp = coalesce(temp1, temp2),
@@ -169,11 +169,11 @@ hobo_st <- list.files(path = "climate/data/DATA_ITEX_2015-18/Hobo_st_plots/", re
   map(mutate_at, .vars = vars(-matches("Date|Time")), .fun = as.numeric) %>%  # all vars except date and time are numeric
   map_df(~{
     date_time_col <- (.) %>% select(matches("Date Time"))
-
+    
     if(ncol(date_time_col) == 1){
       if(date_time_col %>% pull(1) %>% class() == "character"){
-         print("date time is a character")
-          . <- (.) %>% mutate_at(vars(matches("Date Time")), .fun = mdy_hms)  # all Date Time columns in date format.
+        print("date time is a character")
+        . <- (.) %>% mutate_at(vars(matches("Date Time")), .fun = mdy_hms)  # all Date Time columns in date format.
       }    
     }
     date_col <- (.) %>% select(matches("^Date$"))
@@ -183,12 +183,12 @@ hobo_st <- list.files(path = "climate/data/DATA_ITEX_2015-18/Hobo_st_plots/", re
         . <- (.) %>% rename_at(vars(matches("^Time")), ~"Time") %>% 
           mutate(date_time = mdy_hms(paste(Date, Time))) %>% 
           select(-Date, -Time)       
-# This was merging 'date' and 'time' columnns, setting them in date format. Get rid of separate Date and Time columns. 
+        # This was merging 'date' and 'time' columnns, setting them in date format. Get rid of separate Date and Time columns. 
       }
     }                                                                   
-      
+    
     return(.)
-#Coalesce all different columns into one locigally named column:
+    #Coalesce all different columns into one locigally named column:
     
   }, .id = "file") %>% 
   mutate(watCont_ctr = coalesce(`Water Content, mÂ³/mÂ³ (LGR S/N: 10438267, SEN S/N: 10448340, LBL: OTC)` , `Water Content, mÂ³/mÂ³ (LGR S/N: 10438267, SEN S/N: 10448346, LBL: CTR)` ,`Water Content, m³/m³ (LGR S/N: 10438268, SEN S/N: 10448347, LBL: CTR-3)`, `Water Content, m³/m³ (LGR S/N: 10438267, SEN S/N: 10448340, LBL: CTR)` , `Water Content, m³/m³ (LGR S/N: 2257208, SEN S/N: 10659687, LBL: BIS_low_CTR_c4)` , `Water Content, mÂ³/mÂ³ (LGR S/N: 10438268, SEN S/N: 10448347, LBL: CTR-3)` , `Water Content, mÂ³/mÂ³ (LGR S/N: 10438267, SEN S/N: 10448340, LBL: CTR)` , `Water Content, m^3/m^3 (LGR S/N: 2257208, SEN S/N: 1057234200)` , `Water Content, mÂ³/mÂ³ (LGR S/N: 2257208, SEN S/N: 10659687)` , `Water Content, m³/m³ (LGR S/N: 2257208, SEN S/N: 10659687)`)) %>% 
@@ -202,11 +202,11 @@ hobo_st <- list.files(path = "climate/data/DATA_ITEX_2015-18/Hobo_st_plots/", re
   mutate(rh_ctr = coalesce(`RH, % (LGR S/N: 10438267, SEN S/N: 10448514, LBL: CTR)` , `RH, % (LGR S/N: 10438268, SEN S/N: 10448510, LBL: CTR-3)` , `RH, % (LGR S/N: 10438267, SEN S/N: 10448512, LBL: CTR)` , `RH, % (LGR S/N: 2257208, SEN S/N: 2028202, LBL: BIS_low_CTR_c3)`)) %>% 
   
   mutate(rh_otc = coalesce(`RH, % (LGR S/N: 10438267, SEN S/N: 10448512, LBL: OTC)` , `RH, % (LGR S/N: 10438268, SEN S/N: 10448506, LBL: OTC-2)` , `RH, % (LGR S/N: 10438267, SEN S/N: 10448514, LBL: OTC)` , `RH, % (LGR S/N: 2257208, SEN S/N: 10655576, LBL: BIS_low_OTC_c2)`)) %>% 
-    
-    select(-matches("SEN")) %>% # all now unwanted column names have 'SEN' in it, so delete anything that contains that
-
+  
+  select(-matches("SEN")) %>% # all now unwanted column names have 'SEN' in it, so delete anything that contains that
+  
   mutate(date_time = coalesce(date_time , `Date Time, GMT+00:00` , Date)) %>% 
-    select(-`Time, GMT+00:00` , -`Date Time, GMT+00:00` , -Date) %>% # combine date and time columns, lose unwanted ones
+  select(-`Time, GMT+00:00` , -`Date Time, GMT+00:00` , -Date) %>% # combine date and time columns, lose unwanted ones
   
   mutate(habitat = case_when(
     grepl(pattern = "dry", file, ignore.case = TRUE) ~ "dry",
@@ -214,21 +214,21 @@ hobo_st <- list.files(path = "climate/data/DATA_ITEX_2015-18/Hobo_st_plots/", re
     grepl(pattern = "cas" , file, ignore.case = TRUE) ~"cas",
     TRUE ~ "unknown"
   )) %>%  
-# create a column called habitat, call it "dry" when you find 'dry' in the file name, irrespective of capital letters or not.
+  # create a column called habitat, call it "dry" when you find 'dry' in the file name, irrespective of capital letters or not.
   
-# temp, rh and watCont have two columns each, based on treatment (OTC or CTR). they are called "temp_otc", for example. We want to have all temp data in one column, and add an extra column indicating which treatment it has. Therefore we  first stack all columns (exept for file, date time and habitat). We call that column "trait". 
+  # temp, rh and watCont have two columns each, based on treatment (OTC or CTR). they are called "temp_otc", for example. We want to have all temp data in one column, and add an extra column indicating which treatment it has. Therefore we  first stack all columns (exept for file, date time and habitat). We call that column "trait". 
   
- gather(key = "trait", value = "value", watCont_ctr:rh_otc) %>% 
+  gather(key = "trait", value = "value", watCont_ctr:rh_otc) %>% 
   
-# we then create a new column indicating treatment using the names in 'trait', separating them into the variable (temp) and the treatment(otc), using the _ as separator
+  # we then create a new column indicating treatment using the names in 'trait', separating them into the variable (temp) and the treatment(otc), using the _ as separator
   
   separate(col = "trait", into= c("trait", "treatment"), sep = "_") %>% 
-
-# Lastly, we spread the long column (trait) by its value (which is now only temp, watCont, rh).
+  
+  # Lastly, we spread the long column (trait) by its value (which is now only temp, watCont, rh).
   
   spread(key =trait, value = value) %>% 
-
-# Filtering out the 'broken logger data':
+  
+  # Filtering out the 'broken logger data':
   
   filter(!(between(date_time, ymd_hms("2018-07-26 04:00:02"), ymd_hms("2018-08-01 00:00:00")) & habitat == "dry" & file == "Dry-L-6.xlsx")) %>% 
   

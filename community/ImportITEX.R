@@ -102,7 +102,7 @@ ItexHeight <- ItexHeight.raw %>%
          PlotID = gsub("L", "", PlotID)) %>% 
   group_by(Year, Site, Treatment, PlotID) %>% 
   summarise(n = n(), Height_cm = mean(HEIGHT, na.rm = TRUE), se = sd(HEIGHT, na.rm = TRUE)/sqrt(n))
-  
+
 
 
 ### HEIGHT WAS CALCULATED DIFFERENT IN 2009 AND 2015 !!!!
@@ -135,7 +135,7 @@ itex.codes <- field %>% distinct(TREATMENT, PLOT) %>%
   mutate(Plot = substr(Plot, 6, nchar(Plot))) %>% 
   select(-TREATMENT, -PLOT) %>% 
   arrange(Habitat)
-  
+
 #write_csv(field, path = "FieldSheetITEX.csv")
 
 

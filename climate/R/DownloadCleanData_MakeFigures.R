@@ -1,5 +1,6 @@
 #### MAKING FIGURES AND TEST OTC VS CTL ####
 
+## ----ClimateTempPlot
 #install.packages("remotes")
 #remotes::install_github("Plant-Functional-Trait-Course/PFTCFunctions")
 library("PFTCFunctions")
@@ -142,4 +143,6 @@ DailyClimatePlot <- dailyClimate %>%
 #ggsave(DailyClimatePlot, filename = "DailyClimate.png")
 
 FinalItexPlot <- DailyClimatePlot / MonthlyTemp
-ggsave(FinalItexPlot, filename = "FinalClimatePlot.png", width = 10, height = 8)
+FinalItexPlot
+#ggsave(FinalItexPlot, filename = "FinalClimatePlot.png", width = 10, height = 8)
+## ----

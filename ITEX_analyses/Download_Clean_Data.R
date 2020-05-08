@@ -4,28 +4,23 @@
 #remotes::install_github("Plant-Functional-Trait-Course/PFTCFunctions")
 library("PFTCFunctions")
 
-#### CLIMATE ####
-# Weather station
-get_file(node = "smbqh",
-         file = "ItexSvalbard_Climate_2015_2018.csv",
-         path = "climate/data_clean/",
-         remote_path = "Climate")
-
-# iButton station
-get_file(node = "smbqh",
-         file = "ItexSvalbard_Temp_2005_2015.csv",
-         path = "climate/data_clean/",
-         remote_path = "Climate")
+# Climate
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "climate", 
+                   path = "climate/data_clean")
 
 # Traits
-get_file(node = "smbqh",
-         file = "ItexSvalbard_Temp_2005_2015.csv",
-         path = "traits/cleaned_Data/",
-         remote_path = "Traits")
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "trait",
+                   path = "traits/cleaned_Data/")
+
+# Meta data (coordinates)
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "meta", 
+                   path = "traits/cleaned_Data")
 
 # Community
-get_file(node = "smbqh",
-         file = "ITEX_Svalbard_2003_2015_Community_cleaned.csv",
-         path = "community/cleaned_data/",
-         remote_path = "Community")
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "community", 
+                   path = "community/cleaned_data/")
 
