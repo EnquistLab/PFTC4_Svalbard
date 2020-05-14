@@ -6,8 +6,8 @@ library("ggvegan")
 library("broom")
 library("lme4")
 
-source("ImportITEX.R")
-
+#source("ImportITEX.R")
+CommunitySV_ITEX_2003_2015 <- read_csv(file = "community/cleaned_data/ITEX_Svalbard_2003_2015_Community_cleaned.csv")
 
 #### CALCULATE COMMUNITY RESPONSES #### 
 CommResp <- CommunitySV_ITEX_2003_2015 %>% 
@@ -154,6 +154,7 @@ fNMDS <- fortify(NMDS_DRY) %>%
   bind_rows(fNMDS_BIS, fNMDS_CAS)
 
 save(fNMDS, file = "community/cleaned_data/fNMDS.Rdata")
+load(file = "fNMDS.Rdata")
 
 CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, shape = Treatment, linetype = Treatment)) +
   geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
@@ -166,6 +167,11 @@ CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, s
   facet_grid(~ Site) +
   theme_bw()
 
+# Check if community composition changes in treatments and over time
+res <- fNMDS %>% 
+  group_by(Site) %>% 
+  do(fit = lm(NMDS1 ~ Treatment * Year, data = .))
+tidy(res, fit)
 
 #### ORDINATION FOR TRAITS ####
 ItexHeight_2015 <- ItexHeight %>% 
