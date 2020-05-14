@@ -90,7 +90,8 @@ DailyTemp <- tibble(Date = seq(from = as.Date("2004-09-03"),
   crossing(meta) %>% 
   left_join(dailyTemp, by = c("Date", "PlotID", "Site", "Treatment", "Type")) %>%
   mutate(Year = year(Date),
-         Date2 = ymd(paste(2020, month(Date), day(Date)))) %>% 
+         Date2 = ymd(paste(2020, month(Date), day(Date))),
+         Type = factor(Type, levels = c("surface", "soil"))) %>% 
   filter(Year %in% c(2004, 2005, 2015:2018)) %>% 
   ggplot(aes(x = Date2, y = Value, colour = as.factor(Year), linetype = Treatment)) +
   geom_line() +
@@ -107,7 +108,8 @@ MonthlyTemp <- tibble(YearMonth = seq(from = as.Date("2004-09-15"),
   crossing(meta) %>% 
   left_join(monthlyTemp, by = c("YearMonth", "PlotID", "Site", "Treatment", "Type")) %>% 
   mutate(Year = year(YearMonth),
-         Date2 = ymd(paste(2020, month(YearMonth), day(YearMonth)))) %>% 
+         Date2 = ymd(paste(2020, month(YearMonth), day(YearMonth))),
+         Type = factor(Type, levels = c("surface", "soil"))) %>% 
   filter(Year %in% c(2004, 2005, 2015:2018)) %>% 
   ggplot(aes(x = Date2, y = Value, group = interaction(Year, PlotID), colour = as.factor(Year), linetype = Treatment)) +
   geom_line() +
@@ -137,12 +139,56 @@ DailyClimatePlot <- dailyClimate %>%
   filter(Variable %in% c("Temperature", "WaterContent", "PAR")) %>% 
   ggplot() + 
   geom_line(aes(x = Date, y = Value)) +
-  facet_wrap(~ Variable, scales = "free_y") +
-  labs(x = "") +
-  theme_bw()
+  facet_wrap(~ Variable, scales = "free_y",
+             #strip.position = "left",
+             labeller = as_labeller(c(PAR = "PAR uE", Temperature = "Temperature °C", WaterContent = "Water Content m³/m³"))) +
+  labs(x = "", y = NULL) +
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        strip.placement = "outside")
 #ggsave(DailyClimatePlot, filename = "DailyClimate.png")
 
 FinalItexPlot <- DailyClimatePlot / MonthlyTemp
 FinalItexPlot
 #ggsave(FinalItexPlot, filename = "FinalClimatePlot.png", width = 10, height = 8)
 ## ----
+
+# Max temp
+monthlyClimate %>% 
+  filter(Variable == "Temperature") %>% 
+  group_by(year(YearMonth)) %>% 
+  summarise(max(Value))
+
+2016-07-15 Temperature    31   8.74
+2017-07-15 Temperature    31   6.94
+2018-07-15 Temperature    31   7.39
+
+
+# Soil temp
+monthlyTemp %>% 
+  filter(month(YearMonth) == 7) %>% 
+  group_by(Type) %>% 
+  summarise(mean = mean(Value), min = min(Value), max = max(Value)) %>% 
+  mutate(diff = max - min)
+  
+monthlyTemp %>% 
+  filter(month(YearMonth) %in% c(1, 7)) %>% 
+  group_by(Type, Treatment, month(YearMonth)) %>% 
+  summarise(mean = mean(Value)) %>% 
+  pivot_wider(names_from = Treatment, values_from = mean) %>% 
+  mutate(diff = OTC - CTL) %>% 
+  arrange(Type, `month(YearMonth)`)
+
+res <- monthlyTemp %>% 
+  filter(month(YearMonth) %in% c(1),
+         Type == "soil")
+summary(lm(Value ~ Treatment, data = res))
+tidy(res, fit) %>% 
+  filter(term !="(Intercept)",
+         p.value < 0.05)
+
+monthlyTemp %>% 
+  filter(month(YearMonth) == 1) %>% 
+  group_by(Type, Site) %>% 
+  summarise(mean = mean(Value), min = min(Value), max = max(Value)) %>% 
+  mutate(diff = max - min)
