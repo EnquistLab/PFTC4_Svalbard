@@ -229,9 +229,11 @@ cn_data <- cn_isotopes %>%
 # drone IDs
 droneID <- sheets_read(ss = "1hUslQ13FohAdfD7HCMWdqiEKpWhLdYmaRfMeH7Wp0O4", sheet = "Tabellenblatt2") %>% 
   select(Project, ID, Wet_mass_g, Dry_mass_g) 
+droneID <- readxl::read_excel(path = "traits/data/LeafTrait_Svalbard_with_DM.xlsx", sheet = "Tabellenblatt2") %>% 
+  select(Project, ID, Wet_mass_g, Dry_mass_g) 
 
-CorrectedValues %>% anti_join(cn_data, by = "ID") %>% print(n = Inf)
-cn_data %>% anti_join(CorrectedValues, by = "ID") %>% print(n = Inf)
+#CorrectedValues %>% anti_join(cn_data, by = "ID") %>% print(n = Inf)
+#cn_data %>% anti_join(CorrectedValues, by = "ID") %>% print(n = Inf)
 
 # join with phosphorus
 cnp_data_all <- CorrectedValues %>% 
@@ -252,6 +254,6 @@ DroneLeaves <- droneID %>%
          ID = gsub("DB04590", "DBO4590", ID)) %>% 
   left_join(cnp_data_all, by = "ID") %>% 
   select(Project, Country, ID:Dry_mass_g, P_percent,C_percent:dC13_permil, Batch, sdP_Corrected:filename, Remark_CN)
-write_csv(DroneLeaves, path = "traits/data/PFTC4_Svalbard_2018_DroneLeaves.csv")
+#write_csv(DroneLeaves, path = "traits/data/PFTC4_Svalbard_2018_DroneLeaves.csv")
 
 
