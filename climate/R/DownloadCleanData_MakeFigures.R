@@ -166,13 +166,13 @@ monthlyClimate %>%
 
 # Soil temp
 monthlyTemp %>% 
-  filter(month(YearMonth) == 7) %>% 
-  group_by(Type) %>% 
+  filter(month(YearMonth) %in% c(1, 2, 3)) %>% 
+  group_by(Type, Site) %>% 
   summarise(mean = mean(Value), min = min(Value), max = max(Value)) %>% 
   mutate(diff = max - min)
   
 monthlyTemp %>% 
-  filter(month(YearMonth) %in% c(1, 7)) %>% 
+  filter(month(YearMonth) %in% c(1, 2, 3)) %>% 
   group_by(Type, Treatment, month(YearMonth)) %>% 
   summarise(mean = mean(Value)) %>% 
   pivot_wider(names_from = Treatment, values_from = mean) %>% 
@@ -180,8 +180,8 @@ monthlyTemp %>%
   arrange(Type, `month(YearMonth)`)
 
 res <- monthlyTemp %>% 
-  filter(month(YearMonth) %in% c(1),
-         Type == "soil")
+  filter(month(YearMonth) %in% c(1, 2, 3),
+         Type == "surface")
 summary(lm(Value ~ Treatment, data = res))
 tidy(res, fit) %>% 
   filter(term !="(Intercept)",
