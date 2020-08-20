@@ -115,6 +115,7 @@ MonthlyTemp <- tibble(YearMonth = seq(from = as.Date("2004-09-15"),
   geom_line() +
   labs(x = "", y = "Monthly temperature in °C") +
   scale_x_date(date_labels = "%b") +
+  ggtitle("B") +
   facet_grid(Type ~ Site) +
   theme_bw()
 #ggsave(MonthlyTemp, filename = "MonthlyTemp.png")
@@ -143,6 +144,7 @@ DailyClimatePlot <- dailyClimate %>%
              #strip.position = "left",
              labeller = as_labeller(c(PAR = "PAR uE", Temperature = "Temperature °C", WaterContent = "Water Content m³/m³"))) +
   labs(x = "", y = NULL) +
+  ggtitle("A") +
   theme_bw() +
   theme(strip.background = element_blank(),
         strip.placement = "outside")
@@ -150,6 +152,7 @@ DailyClimatePlot <- dailyClimate %>%
 
 FinalItexPlot <- DailyClimatePlot / MonthlyTemp
 FinalItexPlot
+FinalItexPlot <- cowplot::plot_grid(DailyClimatePlot, MonthlyTemp, nrow = 2, scale = c(0.9, 1))
 #ggsave(FinalItexPlot, filename = "FinalClimatePlot.png", width = 10, height = 8)
 ## ----
 
@@ -164,20 +167,27 @@ monthlyClimate %>%
 2018-07-15 Temperature    31   7.39
 
 
-# Soil temp
+# Temperature range
 monthlyTemp %>% 
-  filter(month(YearMonth) %in% c(1, 2, 3)) %>% 
-  group_by(Type, Site) %>% 
-  summarise(mean = mean(Value), min = min(Value), max = max(Value)) %>% 
-  mutate(diff = max - min)
+  filter(month(YearMonth) %in% c(1, 2, 3, 7),
+         Treatment == "CTL") %>% 
+  mutate(time = case_when(month(YearMonth) %in% c(1, 2, 3) ~ "winter",
+                          TRUE ~ "summer")) %>% 
+  group_by(Type, time) %>% 
+  summarise(mean = mean(Value), 
+            se = sd(Value)/sqrt(n()),
+            min = min(Value),
+            max = max(Value),
+            diff = max - min)
   
 monthlyTemp %>% 
-  filter(month(YearMonth) %in% c(1, 2, 3)) %>% 
-  group_by(Type, Treatment, month(YearMonth)) %>% 
+  filter(month(YearMonth) %in% c(1, 2, 3, 7)) %>% 
+  mutate(time = case_when(month(YearMonth) %in% c(1, 2, 3) ~ "winter",
+                          TRUE ~ "summer")) %>% 
+  group_by(Type, Treatment, time, Site) %>% 
   summarise(mean = mean(Value)) %>% 
   pivot_wider(names_from = Treatment, values_from = mean) %>% 
-  mutate(diff = OTC - CTL) %>% 
-  arrange(Type, `month(YearMonth)`)
+  mutate(diff = OTC - CTL)
 
 res <- monthlyTemp %>% 
   filter(month(YearMonth) %in% c(1, 2, 3),
