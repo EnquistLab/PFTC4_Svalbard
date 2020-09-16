@@ -1,0 +1,136 @@
+---
+title: "Plant traits, vegetation, and C flux data from warming experiments and elevation gradients in Adventdalen, Svalbard."
+author: |
+ | Halbritter, A. H. ^[Corresponding author: aud.halbritter@uib.no] $^1$, Althuizen, I. $^2$, Pernille Bronken Eidesen, Geir Wing Gabrielsen,  Jonathan Henn, Ingibjörg Svala Jónsdóttir,  Kari Klanderud, Marc Macias-Fauria, Yadvinder Malhi, Brian Salvin Maitner, Sean Michaletz, Lori Patrick, Ruben Roos, Richard Telford, Polly Bass, Katrín Björnsdóttir, Lucely Lucero Vilca Bustamante, Adam Chmurzynski, Shuli Chen, Siri Vatsø Haugum, Julia Kemppinen, Kai Lepley, Yaoqi Li, Mary Linabury, Ilaíne Silveira Matos, Barbara M. Neto-Bradley, Molly Ng, Pekka Niittynen, Silje Östman, Karolína Pánková, Nina Roth, Matiss Castorena Salaks, Marcus Spiegel, Eleanor Thomson, Alexander Sæle Vågenes, Brian Enquist, Vigdis Vandvik
+
+address: |
+  | $^1$University of Bergen, $^2$University of Michigan, $^3$NMBU, $^4$Nina
+
+
+abstract: |
+  to be added
+
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+
+# These are LaTex settings to take care of floating figures/tables, line spacing, etc
+header-includes:
+  #- \usepackage{endfloat} put figs at the end
+  - \usepackage{setspace}\doublespacing
+  - \usepackage{lineno}
+  - \linenumbers
+  
+output:
+  bookdown::pdf_book:
+    toc: no
+  fig_caption: yes
+  
+documentclass: article
+classoption: a4paper
+bibliography: Paperpile - Jul 10 BibTeX Export.bib
+csl: nature.csl
+
+geometry: margin=0.8in
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+#knitr::opts_chunk$set(fig.pos = 'p') # Places figures on their own pages
+options(digits = 2)
+theme_set(theme_bw(base_size = 12))
+#knitr::opts_chunk$set(out.width = '100%', dpi=300)
+
+```
+
+**Keywords:** biodiviersity, ecosystem function, arctic, traits, data
+
+
+## Background and Summary
+Global climate warming is predicted to be more amplified in the Arctic compared to other regions of the world (IPCC, 2013) and has wide-ranging impacts on biodiversity and ecosystem functioning of arctic ecosystems. 
+Warmer climate is affecting phenology1,2, species ranges3,4, local plant abundance and biodiversity5,6, and ecosystem carbon, nutrient, and water fluxes7. 
+The current pace of climate change in the Arctic necessitates proper assessments of arctic plant and ecosystem responses to a warmer climate. 
+However, there is substantial variation between systems and regions in magnitude and directions of the response to a given climate change8–10. 
+These context-dependencies limit our understanding of observed climate change impacts and our ability to forecast future trends in biodiversity and ecosystem functioning11,12. 
+Comparisons across sites and using different approaches, are critically important to understand what drives the variation in biodiversity and ecosystem response to climate change. 
+
+# this para should maybe be more on the different data sets that we are collecting: community, traits, remote sensing...
+Trait-based approaches offer opportunities for generalization and improved process-based understanding in global change ecology; and in particular for understanding drivers and consequences of context-dependencies in climate responses. 
+Functional traits underlie variation among individuals in their ability to survive, reproduce, and function under different environmental conditions13–15. 
+Because traits vary both within and between species, and can be affected by environment, evolutionary history and plasticity16,17, trait-based approaches offer great opportunity for improved understanding of the drivers, constraints and consequences of variability in biodiversity and ecosystem responses to climate change. 
+In arctic regions, where temperature is a major limiting factor, traits associated with the leaf economics spectrum, a set of leaf traits that characterize individuals along a continuum from ‘fast’ to ‘slow’ photosynthetic and tissue turnover rates and life histories18–20, should be particularly relevant for responses to climatic warming. 
+Functional traits thus improve our mechanistic understanding of species’ response to and functioning under climate change by providing a linkage between the phenotypes of individuals and the environment. 
+An advantage of a trait-based approach is that trait measures offer a ‘common currency’ that facilitates comparison across regions and systems that may not share many taxa, as well as across experimental approaches. 
+
+Seabirds are important providers of nutrients to terrestrial vegetation, especially in the High Arctic. 
+Guano deposition provides ocean-derived nutrients to ecosystems, but this effect is not homogeneous. 
+Many seabirds nest in cliffs along oceans, creating a gradient of nutrients leading away from the colony; however, the specific influence of seabird nutrient deposition is still debated. 
+Research conflicts regarding seabird influence on vegetation. More research is needed to clarify seabird influence in Arctic ecosystems.
+
+In this paper, we report data on biodiversity and ecosystem function from one warming experiment in Endalen and two elevational gradients in Adventdalen and Bjørndalen (?), Longyearbyen Svalbard.
+For the warming experiment, we an already existing International Tundra Experiment (ITEX) site with passive Open Top Chambers (OTC) warming plots (+ 1-2 °C relative to control plots) located in three different habitats (snowbed and Dryas and Cassiope heath). 
+The ITEX site in Endalen has been running since 2002 and is one of few High Arctic sites included in the ITEX network.
+For the two elevational gradients, seven or five site were set up between sea level and xxx and yy m a.s.l, respectively.
+The gradient in Bjørndalen was set up below a birdcliff, representing a nutrient gradient, which allows studying the effect of seabirds on plant communities and ecosystem functioning.
+In both experimental warming approaches, plant species richness, cover, plant functional traits, ecosystem carbon fluxes, remote sensing data and associated climate data were measured in 2018. At the ITEX site, plant community composition and climate data had been recorded since 2003.
+The community composition and ecosystem flux data are comparable with data from previous courses in Gongga Mountains, China (2015, 2016) and Wayquecha, Peru (PFTC3 and 5) in 2018 and 2020 as well as with upcoming courses.
+
+ 
+
+
+
+
+## Methods
+
+### Research site and experimental design
+
+This study was conducted at three high-arctic sites near Longyearbyen, Svalbard. 
+One site was located in Endalen at an already existing ITEX site (Björnsdóttir 2018) comparing artificially heated vegetation and control vegetation in three different habitats (Dryas heath, Cassiope heath and snowbed). 
+Two of the sites were located along elevational gradients, Lindholmhøgda and Bjørndalen. 
+The Bjørndalen gradient was situated below a bird cliff, allowing to study the effect of nutrient input by seabirds.  
+
+
+*ITEX site*
+The experiment was carried out in the high Arctic, in Endalen (78°11‘N, 15°45‘E), a valley situated approximately four kilometers east of Longyearbyen, Svalbard, at 80-90 m elevation. Average annual temperature is –5.2°C (1981–2010) and the average annual precipitation is 191 mm (Førland et al., 2011). The prevailing wind direction is from the east. The soils are typical Cryosols with thin organic layer on top of inorganic sediments (Jones et al., 2010). The experiment was first established in 2002 in three different habitats which are located in the south–southeast–facing hillside of the valley. The habitats differ in vegetation composition and the time of snowmelt (and hence the length of the growing season). These habitats include a relatively dry Dryas heath with thin snow cover (ca. 10 cm) and early snowmelt, a mesic Cassiope heath habitat with intermediate snow depth and melting date, and a moist snowbed community with deep snow (> 100 cm) and late snowmelt.
+
+This experiment is a part of the International Tundra Experiment (ITEX), a research network established in 1990 to study the long–term responses of tundra plants and vegetation to climate warming (Jónsdóttir, 2004; Molau & Mølgaard, 1996). The network uses a simple experimental device to enhance temperature and standardised protocols (Molau & Mølgaard, 1996). Temperature is manipulated at a plot scale by transparent hexagonal open–top chambers (OTCs) which increase air temperature by 1-3°C. These artificially warmed plots are then compared to plots that have not received warming (controls).In Endalen the OTCs have a basal diameter of 1.5 meter and a hiht of 40 cm. 
+
+In 2001 30 plots (75x75 cm), were selected, ten in each of the three habitats (Dryas heath, Cassiope heath and snowbed) based on a priory criteria. Half of the plots were randomly assigned to the warming treatment in 2002 and the other half to control. Plots are localized by GPS coordinates and their aspect and slope were detected via a digital model of the site.
+
+
+
+*Elevational gradient*
+Seven transects were established along the elevational gradient, at different elevations along the slope of Lindholmhøgda, near Isdammen.  Transects were established in herb-like vegetation, in between snow beds (Cassiope heath) and ridge communities (rocky with very scarce vegetation).
+
+
+*Birdcliff gradinet*
+The nutrient deposition gradient was established under a little auk (*Alle alle*, but also a few black guillemots, *Cepphus grylle*) colony near Bjørndalen, up the slope of Platåfjellet (Figure 1, Table 1).
+The birds breeding on the cliffs above the site deposit nutrients in the form of guano.
+Nutrient deposition will therefore be highest closest to the bird nests as the number of bird droppings per surface area will increase.
+
+
+In both elevational gradients we established 75 x 75 cm plots arranged in transects (running perpendicular to the slope) containing 7 plots each. 
+In the bird cliff gradient, we established in total 5 transects (n = 35 plots), in the elevational gradient we established 7 transects, of which the highest transect had only four plots due to limited vegetation available (n = 46 plots). 
+The plot sizes match the size of permanent plots in the ITEX experiment, so the experiments can be compared. 
+While selecting the plots, we ensured that plots were placed in areas of similar microtopography / substrate / vegetation. 
+Plots are mapped with differential GPS and their aspect and slope were detected via digital model of the site. 
+
+
+
+### Data collection methods
+For each site, we collected plant community composition, plant functional traits data for a number of plots, and net ecosystem exchange (NEE) and ecosystem respiration (Reco) was measured for most plots to calculate gross primary production (GPP), and soil respiration measurements were e. Additionally, leaf physiology and remote sensing data was collected. For more details see 3. Response variables.
+
+ 
+
+To measure the increase of bird droppings along our gradient, we put out garbage bags (150x70cm) at each elevation, but unfortunately wind and rain made this an unsuccessful endeavor (rain washed droppings away and wind removed some of the bags). 
+
+
+
+
+
+## Results
+
+### ITEX
+```{r itex_diversity, eval = TRUE, echo = FALSE}
+readd(diversity_Itex_Figure)
+
+```
