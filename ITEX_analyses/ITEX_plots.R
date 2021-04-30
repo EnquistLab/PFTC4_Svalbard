@@ -1,382 +1,504 @@
-#Note, you need to run much of the ImportITEX.R script and CommunityAnalysis.R script to get several of the important input dataframes
+#Load packages
+library(tidyverse)
+library(ggpubr)
+library(vegan)
 
-#### Create community response dataframe ####
+#Load data
 load("community/cleaned_data/CommResp.Rdata")
-load(file = "community/cleaned_data/CommunitySV_ITEX_2003_2015.Rdata", verbose = TRUE)
-
-
-metaItex <- CommunitySV_ITEX_2003_2015 %>% 
-  distinct(Site, Treatment, PlotID)
-
-#calculate distances between plot community metrics from 2003 to 2015
-metric_plot_dist <- CommResp %>% 
-  filter(Year != 2009) %>% 
-  gather(key = response, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
-  group_by(Treatment, PlotID, Site, response) %>% 
-  summarize(dist = diff(value))%>% 
-  #left_join(soil_moisture2003, by = "PlotID") %>% 
-  left_join(soil_moisture2004, by = "PlotID") %>% 
-  filter(response == "Richness" | response == "Diversity" | response == "Evenness" | response == "sumAbundance" | response == "totalGraminoid" | response == "totalForb" | response == "totalShrub" | response == "propLichen" | response == "propBryo") %>% 
-  left_join(soil_moisture2004, by = "PlotID") %>% 
-  left_join(tpi, by = "PlotID")
-
-metric_plot_dist %>% 
-  ggplot(aes(x = soil_moist2004.x, y = dist, color = Site.x)) +
-  geom_point(size = 2) +
-  geom_abline(slope = 0, intercept = 0) +
-  facet_wrap(~response, scales = "free")
-
-metric_plot_dist %>% 
-  ggplot(aes(x = X_mean, y = soil_moist2004.x, color = Site.x)) +
-  geom_point(size = 2)
-
-#Plot of change from beginning to end in community metrics by habitat type
-metric_plot_dist %>% 
-  #filter(Year != 2003) %>% 
-  ggplot(aes(x = Treatment.x, y = dist, fill = Treatment.x)) +
-  geom_abline(slope = 0,intercept = 0) +
-  geom_boxplot() +
-  scale_fill_manual(values = c("gray", "red")) +
-  facet_wrap(~response, scales = "free") +
-  ylab("Change in Metric") +
-  xlab("Habitat Type") +
-  theme(text = element_text(size = 20)) 
-
-metric_plot_dist %>% 
-  #filter(Year != 2003) %>% 
-  ggplot(aes(x = Site.x, y = dist, fill = Treatment.x)) +
-  geom_abline(slope = 0,intercept = 0) +
-  geom_boxplot() +
-  scale_fill_manual(values = c("gray", "red")) +
-  facet_wrap(~response, scales = "free") +
-  ylab("Change in Metric") +
-  xlab("Habitat Type") +
-  theme(text = element_text(size = 20)) 
-
-metric_plot_dist %>% 
-  #filter(Year != 2003) %>% 
-  ggplot(aes(x = soil_moist2004.x, y = dist, color = Treatment.x)) +
-  geom_abline(slope = 0,intercept = 0) +
-  geom_point() +
-  scale_color_manual(values = c("black", "red")) +
-  facet_wrap(~response, scales = "free") +
-  ylab("Change in Metric") +
-  xlab("Moisture") +
-  theme(text = element_text(size = 20)) 
-
-#plot of change from beginning to end in community metrics by soil moisture
-metric_plot_dist %>% 
-  ggplot(aes(x = soil_moist, y = dist, color = Treatment.x)) +
-  geom_abline(slope = 0,intercept = 0) +
-  geom_point() +
-  stat_smooth(method = "lm") +
-  scale_color_manual(values = c("black", "red")) +
-  facet_wrap(~response, scales = "free") +
-  ylab("Change in Metric") +
-  xlab("Soil Moisture") +
-  theme(text = element_text(size = 20)) +
-  scale_fill_manual(values = c("grey", "red"))
-
-metric_aov <- metric_plot_dist %>% 
-  group_by(response) %>% 
-  do(metric_aov = aov(dist ~ Treatment*Site.x, data = .))
-
-
-#### Add community ordination data ####
-load("community/cleaned_data/fNMDS.Rdata")
-
-fNMDS %>%
-  filter(Site == "CAS") %>% 
-  filter(Year != 2009) %>% 
-  group_by(PlotID) %>% 
-  summarize(diff1 = diff(NMDS1), diff2 = diff(NMDS2)) %>% 
-  mutate(dist = sqrt(diff1^2 + diff2^2))
-
-##CAS-5, CAS-10, CAS-9 do most extreme responses
-
-#Auds NMDS plot
-CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, shape = Treatment, linetype = Treatment)) +
-  geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
-  geom_path() + 
-  coord_equal() +
-  scale_size_discrete(name = "Year", range = c(1.2, 2.5), limits = c("Other", "First"), breaks = c("First", "Other")) +
-  scale_shape_manual(values = c(1, 16)) + 
-  scale_linetype_manual(values = c("dashed", "solid")) + 
-  labs(x = "NMDS axis 1", y = "NMDS axis 2") +
-  facet_grid(~ Site) +
-  theme_bw()
-
-#calcuate distances between plot NMDS locations from 2003 to 2015
+CommunitySV_ITEX_2003_2015 <- read.csv("community/cleaned_data/ITEX_Svalbard_2003_2015_Community_cleaned.csv")
 load("climate/data/soil_moisture2003.rdata")
 load("climate/data/soil_moisture2004.rdata")
 tpi <- read.csv("climate/data/twiFull.csv") %>% 
   mutate(PlotID = paste(habitat, id, sep = "-"))
-  
-comm_plot_dist <- fNMDS %>%
-  filter(Year != 2009) %>% 
-  group_by(Treatment, PlotID, Site) %>% 
-  summarize(diff1 = diff(NMDS1), diff2 = diff(NMDS2)) %>% 
-  mutate(dist = sqrt(diff1^2 + diff2^2)) %>% 
-  left_join(soil_moisture2003, by = "PlotID") %>% 
-  left_join(soil_moisture2004, by = "PlotID")
+load("traits/cleaned_data/traitMean.RData")
 
-comm_plot_dist_test <- aov(dist ~ Treatment.x * Site.x, data = comm_plot_dist)
+traitMean <- traitMean %>% ungroup() %>% 
+  mutate(Trait = plyr::mapvalues(Trait, from = c("P_percent", "dC13_permil", "dN15_permil"), to = c("P_Ave", "dC13_percent", "dN15_percent"))) %>% 
+  mutate(Treatment = substr(Site_trt, 4, 6))
 
-#plot of change in multivariate position based on community composition
-comm_plot_dist %>% 
-  ggplot(aes(x = Treatment.x, y = dist)) +
-  geom_abline(slope = 0,intercept = 0) +
-  geom_boxplot() +
-  scale_fill_manual(values = c("gray", "red")) +
-  ylab("Euclidian Distance") +
-  xlab("Habitat Type") +
-  theme(text = element_text(size = 20))
+metaItex <- CommunitySV_ITEX_2003_2015 %>% 
+  distinct(Site, Treatment, PlotID)
 
-comm_plot_dist %>% 
-  ggplot(aes(x = soil_moist, y = dist, color = Treatment.x)) +
-  geom_abline(slope = 0,intercept = 0) +
-  geom_point(size = 4)
+#to filter away the plots that were "iced", run these lines of code
+#also change habitat labels here
+CommunitySV_ITEX_2003_2015 <- CommunitySV_ITEX_2003_2015 %>% 
+  filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") %>% 
+  mutate(Site = plyr::mapvalues(Site, from = c("BIS", "CAS", "DRY"), to = c("SB", "CH", "DH"))) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
-#### Community mean trait ordination ####
-traitMean <- readRDS(file = "traits/cleaned_data/community_weighted_means.RDS") %>% 
-  as.tibble() %>% 
-  mutate(mean = as.numeric(as.character(mean))) %>% 
-  mutate(Year = as.numeric(as.character(Year)))
 
-traitMean_noitv <- readRDS(file = "traits/cleaned_data/community_weighted_means_no_itv.RDS") %>% 
-  as.tibble() %>% 
-  mutate(mean = as.numeric(as.character(mean))) %>% 
-  mutate(Year = as.numeric(as.character(Year)))
+traitMean <- traitMean %>% 
+  filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") %>% 
+  mutate(Site = plyr::mapvalues(Site, from = c("BIS", "CAS", "DRY"), to = c("SB", "CH", "DH"))) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
-trait_ord <- traitMean %>% select(-mean_noitv) %>% 
-  spread(key = Trait, value = mean) %>% 
-  select(-PC1, -PC2, -PC3)
+CommResp <- CommResp %>% ungroup() %>% 
+  filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") %>% 
+  mutate(Site = plyr::mapvalues(Site, from = c("BIS", "CAS", "DRY"), to = c("SB", "CH", "DH"))) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
-trait_pca <- prcomp(trait_ord[,c(5:9)], center = T, scale. = T)
-trait_pca_results <- cbind(trait_ord, trait_pca$x) %>% left_join(metaItex)
-
-trait_pca_results1 <- trait_pca_results %>% 
-  filter(Year != 2009) %>% 
-  group_by(PlotID, Site) %>% 
-  summarize(diff1 = diff(PC1), diff2 = diff(PC2)) %>% 
-  mutate(dist = sqrt(diff1^2 + diff2^2)) %>% 
-  left_join(soil_moisture2003, by = "PlotID") %>% 
-  left_join(soil_moisture2004, by = "PlotID") %>% 
-  left_join(metaItex)%>% 
-  left_join(soil_moisture2004, by = "PlotID")
-
-trait_pca_results1 %>% 
-  ggplot(aes(x = soil_moist2004.x, y = dist, color = Treatment)) +
-  geom_abline(slope = 0,intercept = 0) +
-  geom_point() +
-  scale_fill_manual(values = c("gray", "red")) +
-  ylab("Euclidian distance \n(trait space)") +
-  xlab("Habitat Type") +
-  theme(text = element_text(size = 20))
-
-TraitOrdination <- ggplot(trait_pca_results, aes(x = PC1, y = PC2, group = PlotID, shape = Treatment, linetype = Treatment)) +
-  geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
-  geom_path() + 
-  coord_equal() +
-  scale_size_discrete(name = "Year", range = c(1.2, 2.5), limits = c("Other", "First"), breaks = c("First", "Other")) +
-  scale_shape_manual(values = c(1, 16)) + 
-  scale_linetype_manual(values = c("dashed", "solid")) + 
-  labs(x = "PC1", y = "PC2") +
-  facet_wrap(~ Site) +
-  theme_bw()
-
-library(ggpubr)
-ggarrange(CommunityOrdination, TraitOrdination, nrow = 2, common.legend = T)
-
-#### Calculate vegetation and trait multivariate distances
+#### plot 1: multivariate space ####
+#community distances
 comm_distances <- CommunitySV_ITEX_2003_2015 %>% 
   select(-Spp, -FunctionalGroup) %>% 
   filter(Year != 2009) %>% 
   spread(key = Taxon, value = Abundance, fill = 0) %>% 
   group_by(PlotID) %>% 
   do( data_frame(out = as.vector(vegdist(select(., -(Site:Year)), method = "bray")))) %>% 
-  left_join(metaItex)
+  left_join(metaItex)  %>% 
+  mutate(Site = plyr::mapvalues(Site, from = c("BIS", "CAS", "DRY"), to = c("SB", "CH", "DH"))) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
-comm_dist <- comm_distances %>% 
+comm_dist <- comm_distances %>% ungroup() %>% mutate(y_max = max(out), y_min = min(out)) %>%
   ggplot(aes(x = Site, y = out, fill = Treatment)) +
   geom_boxplot() +
   scale_fill_manual(values = c("gray", "red")) +
   ylab("Bray Curtis Distance") +
   xlab("Habitat Type") +
   ggtitle("Community Change") +
-  theme(text = element_text(size = 20))
+  theme_classic() +
+  theme(text = element_text(size = 20))+
+  stat_compare_means(aes(group = Site), label = "p.signif", method = "anova", hide.ns = F, label.x = 0.5, label.y.npc = 0.05)+
+  stat_compare_means(aes(group = Treatment), label = "p.signif", method = "anova", hide.ns = F, label.y.npc = 0.95) +
+  geom_blank(aes(y = y_min)) +
+  geom_blank(aes(y = y_max + 0.35*y_max))
 
-comm_test <- lm(out ~ Treatment, data = comm_distances)
+# trait distances, no longer used.
+# trait_distances <- traitMean %>% 
+#   filter(Year != 2009) %>% 
+#   select(-mean_noitv) %>% 
+#   filter(Trait != "Dry_Mass_Total_g", Trait != "Wet_Mass_Total_g", Trait != "wetSLA_cm2_per_g", Trait != "Wet_mass_g") %>% 
+#   spread(key = Trait, value = mean) %>% 
+#   group_by(PlotID) %>% 
+#   do( tibble(out = as.vector(dist(select(., -(Site:Year)), method = "euclidian")))) %>% 
+#   left_join(metaItex)
+# 
+# trait_distances_noitv <- traitMean %>% 
+#   filter(Year != 2009) %>% 
+#   select(-mean) %>% 
+#   filter(Trait != "Dry_Mass_Total_g", Trait != "Wet_Mass_Total_g", Trait != "wetSLA_cm2_per_g", Trait != "Wet_mass_g") %>% 
+#   spread(key = Trait, value = mean_noitv) %>% 
+#   group_by(PlotID) %>% 
+#   do( tibble(out = as.vector(dist(select(., -(Site:Year)), method = "euclidian")))) %>% 
+#   left_join(metaItex)
+# 
+# 
+# trait_dist <- trait_distances %>% ungroup() %>% mutate(y_max = max(out), y_min = min(out)) %>% 
+#   ggplot(aes(x = Site, y = out, fill = Treatment)) +
+#   geom_boxplot() +
+#   scale_fill_manual(values = c("gray", "red")) +
+#   ylab("Euclidian Distance") +
+#   xlab("Habitat Type") +
+#   ggtitle("Trait Change") +
+#   theme_classic() +
+#   theme(text = element_text(size = 20)) +
+#   stat_compare_means(aes(group = Site), label = "p.signif", method = "anova", hide.ns = F, label.x = 0.5, label.y.npc = 0.05)+
+#   stat_compare_means(aes(group = Treatment), label = "p.signif", method = "anova", hide.ns = F, label.y.npc = 0.95) +
+#   geom_blank(aes(y = y_min)) +
+#   geom_blank(aes(y = y_max + 0.35*y_max))
+# 
+# ggarrange(comm_dist, trait_dist, ncol = 2, common.legend = T)
 
-# trait distances
-trait_distances <- traitMean %>% 
+#### plot 2: change in community metrics ####
+#calculate change in community metrics
+metric_plot_dist <- CommResp %>% 
   filter(Year != 2009) %>% 
-  filter(trait != "Dry_Mass_Total_g", trait != "Wet_Mass_Total_g", trait != "wetSLA_cm2_per_g", trait != "Wet_mass_g") %>% 
-  spread(key = trait, value = mean) %>% 
-  group_by(PlotID) %>% 
-  do( data_frame(out = as.vector(dist(select(., -(Site:Year)), method = "euclidian")))) %>% 
-  left_join(metaItex)
+  gather(key = response, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
+  group_by(Treatment, PlotID, Site, response) %>% 
+  summarize(dist = diff(value))%>% 
+  #left_join(soil_moisture2003, by = "PlotID") %>% 
+  #left_join(soil_moisture2004, by = "PlotID") %>% 
+  filter(response == "Richness" | response == "Diversity" | response == "Evenness" | response == "sumAbundance" | response == "totalGraminoid" | response == "totalForb" | response == "totalShrub" | response == "propLichen" | response == "propBryo")
+  #left_join(soil_moisture2004, by = "PlotID") %>% 
+  #left_join(tpi, by = "PlotID")
 
-trait_dist <- trait_distances %>% 
-  ggplot(aes(x = Site, y = out, fill = Treatment)) +
-  geom_boxplot() +
-  scale_fill_manual(values = c("gray", "red")) +
-  ylab("Euclidian Distance") +
+comm_distances_merge <- comm_distances %>% 
+  rename("dist" = "out") %>% 
+  mutate(response = "Bray Curtis Distance")
+
+metric_plot_dist <- bind_rows(metric_plot_dist, comm_distances_merge)
+
+t_test <- metric_plot_dist %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>% 
+  dplyr::filter(response != "Forb Abundance") %>% 
+  filter(response != "Bryophyte Abundance") %>% 
+  filter(response != "Lichen Abundance") %>% 
+  droplevels() %>% 
+  group_by(response, Site, Treatment) %>% 
+  summarise(P = t.test(dist, mu = 0)$p.value,
+            Sig = ifelse(P < 0.05, "*", ifelse(P<0.1 & P > 0.05, "+", "")),
+            MaxWidth = max(dist))%>% ungroup() %>% 
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+
+library(multcompView)
+library(broom)
+anova_t <- metric_plot_dist %>% 
+  group_by(response) %>% 
+  nest(data = -response) %>% 
+  mutate(
+    aov = map(data, ~ aov(dist ~ Treatment*Site, data = .x)),
+    aov_tidy = map(aov, tidy)
+  ) 
+
+anova_t <- anova_t %>% 
+  select(response, aov_tidy) %>% 
+  unnest(aov_tidy)
+
+anova_text <- anova_t %>% ungroup() %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>% 
+  mutate(term = plyr::mapvalues(term, from = c("Treatment", "Site", "Treatment:Site"), to = c("T", "H", "TxH"))) %>% 
+  filter(term != "Residuals") %>% 
+  mutate(test = paste(term, ifelse(p.value < 0.05, "*", ifelse(p.value<0.1 & p.value > 0.05, "+", "")), sep = " ")) %>% 
+  mutate(test = ifelse(grepl("\\*", test), test, ifelse(grepl("\\+", test), test, NA))) %>% 
+  pivot_wider(id_cols = response, names_from = term, values_from = test) %>% 
+  mutate(T = ifelse(is.na(T), "", T)) %>% 
+  mutate(H = ifelse(is.na(H), "", H)) %>% 
+  mutate(text = trimws(ifelse(!is.na(TxH), TxH, paste(T, H)))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+
+
+metric_change <- metric_plot_dist %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>% 
+  group_by(response) %>% 
+  filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>% 
+  mutate(y_max = max(dist), y_min = min(dist)) %>% 
+  #filter(Year != 2003) %>% 
+  ggplot() +
+  geom_hline(yintercept = 0) +
+  geom_boxplot(aes(x = Site, y = dist, fill = Treatment)) +
+  scale_fill_manual(values = c("darkgray", "red")) +
+  facet_wrap(~response, scales = "free") +
+  ylab("Change in Metric") +
   xlab("Habitat Type") +
-  ggtitle("Trait Change") +
-  theme(text = element_text(size = 20))
+  theme_classic() +
+  theme(text = element_text(size = 15), 
+        legend.position = "top",
+        legend.direction = "horizontal",
+        strip.background = element_blank())+
+  #stat_compare_means(aes(group = Site), label = "p.signif", method = "anova", hide.ns = F, label.x.npc = 0.05, label.y.npc = 0.05)+
+  #stat_compare_means(aes(x = Site, y = dist, group = Treatment), label = "p.signif", method = "anova", hide.ns = T, label.y.npc = 0) +
+  geom_blank(aes(y = y_min + 0.5*y_min)) +
+  geom_blank(aes(y = y_max + 0.4*y_max)) +
+  geom_text(aes(label = text, x = 0.5, y = Inf, hjust = 0, vjust = 2), size = 4, color = "black",  data = anova_text) +
+  geom_text(aes(label = Sig, x = Site, y = -Inf, hjust = 0.5, vjust = 0, group = Treatment), size = 6, position = position_dodge(0.75),color = "black",  data = t_test)
 
-ggarrange(comm_dist, trait_dist, ncol = 2, common.legend = T)
+tiff("plots/metric_change.tiff", width = 8, height = 6, units = "in", res = 400)
+metric_change
+dev.off()
 
-trait_test <- lm(out ~ Treatment * Site, data = trait_distances)
+#### create supplemental data community figures ####
+t_test_supp <- metric_plot_dist %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>% 
+  filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>% 
+  droplevels(.) %>% 
+  group_by(response, Site, Treatment) %>% 
+  summarise(P = t.test(dist, mu = 0)$p.value,
+            Sig = ifelse(P < 0.05, "*", ifelse(P<0.1 & P > 0.05, "+", "")),
+            MaxWidth = max(dist))%>% ungroup() %>% 
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
 
 
-#### CWM traits ####
-load("traits/data/traitsITEX_SV_2018.Rdata")
+anova_text_supp <- anova_t %>% ungroup() %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>% 
+  mutate(term = plyr::mapvalues(term, from = c("Treatment", "Site", "Treatment:Site"), to = c("T", "H", "TxH"))) %>% 
+  filter(term != "Residuals") %>% 
+  mutate(test = paste(term, ifelse(p.value < 0.05, "*", ifelse(p.value<0.1 & p.value > 0.05, "+", "")), sep = " ")) %>% 
+  mutate(test = ifelse(grepl("\\*", test), test, ifelse(grepl("\\+", test), test, NA))) %>% 
+  pivot_wider(id_cols = response, names_from = term, values_from = test) %>% 
+  mutate(T = ifelse(is.na(T), "", T)) %>% 
+  mutate(H = ifelse(is.na(H), "", H)) %>% 
+  mutate(text = trimws(ifelse(!is.na(TxH), TxH, paste(T, H)))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
 
-traits_mean_ctl <- traitsITEX_SV_2018 %>% 
-  select(Treatment, Taxon, Plant_Height_cm, Dry_Mass_g, Leaf_Area_cm2, Leaf_Thickness_Ave_mm, SLA_cm2_g, LDMC) %>% 
-  gather(key = trait, value = value, -Treatment, -Taxon) %>% 
-  filter(Treatment == "CTL") %>% 
-  group_by(Taxon, trait) %>% 
-  summarize(mean_trait = mean(value, na.rm = T))
 
-#sum_abundance <- CommunitySV_ITEX_2003_2015 %>% filter(Taxon != "equisetum scirpoides", Taxon != "equisetum arvense") %>% 
-#  group_by(PlotID, Year) %>% 
-#  summarize(sum_abundance = sum(Abundance, na.rm = T))
-
-cwm_itex_ctl <- CommunitySV_ITEX_2003_2015 %>% filter(Taxon != "equisetum scirpoides", Taxon != "equisetum arvense") %>%
-  #left_join(sum_abundance) %>% 
-  #mutate(rel_abundance = Abundance/sum_abundance) %>% 
-  left_join(traits_mean_ctl) %>% 
-  group_by(PlotID, Year, trait) %>% 
-  summarize(cwm_ctl = weighted.mean(mean_trait, Abundance, na.rm = T)) %>% 
-  left_join(metaItex, by = "PlotID") %>% 
-  mutate(Site = substr(PlotID, 1, 3))
-
-cwm_itex_ctl %>% filter(!is.na(trait)) %>% 
-  ggplot(aes(x = as.factor(Year), y = cwm_ctl, fill = Treatment)) +
-  geom_boxplot() +
-  facet_grid(trait ~ Site, scales = "free") +
-  scale_fill_manual(values = c("grey", "red"))
-
-cwm_itex_ctl_dist <- cwm_itex_ctl %>%
-  filter(Year != 2009) %>% 
-  group_by(PlotID, trait) %>% 
-  mutate(dist = cwm_ctl - lag(cwm_ctl))
-
-# plot of change mean community functional traits
-#NOTE: this is based on CWM without ITV right now!
-cwm_itex_ctl_dist %>% filter(!is.na(trait)) %>% 
-  ggplot(aes(x = Site, y = dist, fill = Treatment)) +
-  geom_boxplot() +
-  geom_abline(slope = 0, intercept = 0) +
-  scale_fill_manual(values = c("gray", "red")) +
-  ylab("Change in community mean trait") +
+metric_change_supp <- metric_plot_dist %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>% 
+  group_by(response) %>% 
+  filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>% 
+  mutate(y_max = max(dist), y_min = min(dist)) %>% 
+  #filter(Year != 2003) %>% 
+  ggplot() +
+  geom_hline(yintercept = 0) +
+  geom_boxplot(aes(x = Site, y = dist, fill = Treatment)) +
+  scale_fill_manual(values = c("darkgray", "red")) +
+  facet_wrap(~response, scales = "free") +
+  ylab("Change in Metric") +
   xlab("Habitat Type") +
-  theme(text = element_text(size = 20)) +
-  facet_wrap(~trait, scales = "free")
+  theme_classic() +
+  theme(text = element_text(size = 15), 
+        legend.position = "top",
+        legend.direction = "horizontal",
+        strip.background = element_blank())+
+  #stat_compare_means(aes(group = Site), label = "p.signif", method = "anova", hide.ns = F, label.x.npc = 0.05, label.y.npc = 0.05)+
+  #stat_compare_means(aes(x = Site, y = dist, group = Treatment), label = "p.signif", method = "anova", hide.ns = T, label.y.npc = 0) +
+  geom_blank(aes(y = y_min + 0.5*y_min)) +
+  geom_blank(aes(y = y_max + 0.4*y_max)) +
+  geom_text(aes(label = text, x = 0.5, y = Inf, hjust = 0, vjust = 2), size = 4, color = "black",  data = anova_text_supp) +
+  geom_text(aes(label = Sig, x = Site, y = -Inf, hjust = 0.5, vjust = 0, group = Treatment), size = 6, position = position_dodge(0.75),color = "black",  data = t_test_supp)
+
+tiff("plots/metric_change_supp.tiff", width = 8, height = 4, units = "in", res = 400)
+metric_change_supp
+dev.off()
+
+
+#### supplemental plot. change in richness, evenness, and abundance through time ####
+
+metric_time <- CommResp %>% 
+  select(Year, Site, Treatment, Richness, Evenness, totalForb, totalShrub, totalGraminoid, propBryo, propLichen, PlotID) %>%
+  rename("Forb\nAbundance" = totalForb, "Shrub\nAbundance" = totalShrub, "Graminoid\nAbundance" = totalGraminoid, "Bryo\nAbundance" = propBryo, "Lichen\nAbundance" = propLichen) %>% 
+  gather(key = metric, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
+  group_by(metric) %>% mutate(max_val = max(value)) %>% ungroup() %>% 
+  mutate(metric = factor(metric, levels = c("Richness", "Evenness", "Forb\nAbundance", "Graminoid\nAbundance", "Shrub\nAbundance", "Bryo\nAbundance", "Lichen\nAbundance"))) %>% 
+  ggplot(aes(x = as.factor(Year), y = value, fill = Treatment)) +
+  geom_boxplot() +
+  facet_grid(metric ~ Site, scales = "free", switch = "both") + 
+  scale_fill_manual(values = c("darkgray", "red")) +
+  ylab("Community Metric") +
+  xlab("Habitat Type") +
+  theme_classic() +
+  theme(text = element_text(size = 13),
+        panel.background = element_rect(color = "black", fill = NA),
+        strip.placement = "outside",
+        strip.background = element_rect(fill = "white", color = "white"),
+        legend.position = "top") +
+  stat_compare_means(aes(group = Treatment), label = "p.signif", method = "anova", hide.ns = T, label.y.npc = 0.9) +
+  geom_blank(aes(y = max_val + 0.2*max_val))
+
+tiff("plots/metric_time.tiff", width = 5, height = 9, units = "in", res = 400)
+metric_time
+dev.off()
+
+#### pca plot ####
+
+trait_pca <- traitMean %>% 
+  select(-mean_noitv) %>% 
+  mutate(Trait = plyr::mapvalues(Trait, from = c("SLA_cm2_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "N_percent", "C_percent", "P_Ave", "CN_ratio", "dC13_percent", "dN15_percent", "Dry_Mass_g", "Plant_Height_cm"), to = c("SLA", "LDMC", "Leaf Area", "Leaf Thickness", "%N", "%C", "%P", "C:N", "delta13C", "delta15N", "Dry Mass", "Plant Height"))) %>% 
+  pivot_wider(names_from = Trait, values_from = mean)
+
+trait_pca_data <- trait_pca %>% 
+  select("%C":"SLA")
+
+trait_pca_info <- trait_pca %>% 
+  select(Site:Treatment)
+
+pca_res <- prcomp(trait_pca_data, center = T, scale. = T)
+
+pca_points <- cbind(trait_pca_info, pca_res$x) %>% rename("Habitat" = "Site")
+pca_arrows <- pca_res$rotation
+
+library(ggfortify)
+pca_plot <- autoplot(pca_res, data = pca_points, 
+         shape = 'Treatment', 
+         colour = "Habitat", 
+         size = 3,
+         loadings = TRUE, 
+         loadings.colour = 'black',
+         loadings.label = TRUE, 
+         loadings.label.size = 4, 
+         loadings.label.colour = "black",
+         loadings.label.repel = T,
+         parse = T) +
+  theme_classic() +
+  theme(legend.position = "top",
+        text = element_text(size = 12)) +
+  scale_color_manual(values = c("blue", "forestgreen", "orange"))
+
+tiff(filename = "plots/pca_plot.tiff", width = 7, height = 5.75, units = "in", res = 400)
+pca_plot
+dev.off()
+
+#PERMANOVA of PCA groups
+pca_test <- pca_points %>% 
+  group_by(Habitat, Treatment) %>% 
+  select(-Site_trt, -Year, -Treatment, -PlotID) 
+
+perm <- adonis(pca_test[c(3:14)] ~ pca_test$Treatment * pca_test$Habitat, method='eu')
+
+perm
+
+#### plot 3: mean trait values by plot ####
+anova_trait <- traitMean %>% 
+  group_by(Trait) %>% 
+  nest(data = -Trait) %>% 
+  mutate(
+    aov = map(data, ~ aov(mean ~ Treatment*Site, data = .x)),
+    aov_tidy = map(aov, tidy)
+  ) 
+
+
+anova_trait <- anova_trait %>% 
+  select(Trait, aov_tidy) %>% 
+  unnest(aov_tidy)
 
 
 
 
-cwm_itex <- cwm_itex_ctl %>%
-  left_join(traitMean) %>% 
-  rename(cwm_itv = mean) %>% 
-  left_join(traitMean_noitv) %>% 
-  rename(cwm_noitv = mean)
-
-cas_abundance <- CommunitySV_ITEX_2003_2015 %>% 
-  left_join(sum_abundance) %>% 
-  mutate(rel_abundance = Abundance/sum_abundance) %>% 
-  filter(Taxon == "cassiope tetragona") %>% 
-  select(rel_abundance, PlotID, Year)
-
-cwm_itex %>% filter(!is.na(trait)) %>% #left_join(cas_abundance) %>% 
-  ggplot(aes(x = cwm_itv, y = cwm_noitv, color = Site)) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0) +
-  facet_wrap(~trait, scales = "free")
-
-traitsITEX_SV_2018 %>% filter(Site == "CAS") %>% 
-  ggplot(aes(x = Dry_Mass_g, y = Leaf_Area_cm2, color = Taxon)) +
-  geom_point(size = 2)
-
-equisetum <- CommunitySV_ITEX_2003_2015 %>% 
-  left_join(sum_abundance) %>% 
-  mutate(rel_abundance = Abundance/sum_abundance) %>% 
-  filter(Taxon == "equisetum scirpoides" | Taxon == "equisetum arvense")
+anova_text_trait <- anova_trait %>% ungroup() %>% mutate(Trait = plyr::mapvalues(Trait, from = c("SLA_cm2_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "N_percent", "C_percent", "P_Ave", "CN_ratio", "dC13_percent", "dN15_percent", "Dry_Mass_g", "Plant_Height_cm"), to = c("`SLA`*` `*(cm^2/g)", "`LDMC`*` `*(g/g)", "'Leaf'*' '*'Area'*' '*(cm^2)", "'Leaf'*' '*'Thickness'*' '*(mm)", "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')", "'Dry'*' '*'Mass'*' '*'(g)'", "'Plant'*' '*'Height'*' '*'(cm)'"))) %>% 
+  mutate(Trait = factor(Trait, levels = c("'Plant'*' '*'Height'*' '*'(cm)'", "`SLA`*` `*(cm^2/g)", "'Dry'*' '*'Mass'*' '*'(g)'","'Leaf'*' '*'Area'*' '*(cm^2)",  "'Leaf'*' '*'Thickness'*' '*(mm)", "`LDMC`*` `*(g/g)",  "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')" ))) %>% 
+  mutate(term = plyr::mapvalues(term, from = c("Treatment", "Site", "Treatment:Site"), to = c("T", "H", "TxH"))) %>% 
+  filter(term != "Residuals") %>% 
+  mutate(test = paste(term, ifelse(p.value < 0.05, "*", ifelse(p.value<0.1 & p.value > 0.05, "+", "")), sep = " ")) %>% 
+  mutate(test = ifelse(grepl("\\*", test), test, ifelse(grepl("\\+", test), test, NA))) %>% 
+  pivot_wider(id_cols = Trait, names_from = term, values_from = test) %>% 
+  mutate(T = ifelse(is.na(T), "", T)) %>% 
+  mutate(H = ifelse(is.na(H), "", H)) %>% 
+  mutate(text = trimws(ifelse(!is.na(TxH), TxH, paste(T, H))))
 
 
-#### Effect of ITV on mean community trait values ####
-traitMean <- readRDS(file = "traits/cleaned_data/community_weighted_means.RDS") %>% 
-  as.tibble() %>% 
-  mutate(mean = as.numeric(as.character(mean))) %>% 
-  mutate(Year = as.numeric(as.character(Year)))
 
-traitMean_noitv <- readRDS(file = "traits/cleaned_data/community_weighted_means_no_itv.RDS") %>% 
-  as.tibble() %>% 
-  mutate(mean = as.numeric(as.character(mean)))%>% 
-  mutate(Year = as.numeric(as.character(Year))) %>% 
-  rename("mean_noitv" = "mean")
 
-traitMean <- traitMean %>% 
-  left_join(traitMean_noitv) %>% 
-  mutate(diff = mean - mean_noitv) %>% 
-  left_join(metaItex) %>% 
-  mutate(prop_diff = diff/mean) %>% 
-  gather(key = key, value = value, -Site, -Year, -PlotID, -trait, -Treatment) 
-
-traitMean %>% filter(Year == 2015) %>% filter(trait == "Dry_Mass_g" | trait == "LDMC" | trait == "Leaf_Area_cm2" | trait == "Leaf_Thickness_Ave_mm" | trait == "Plant_Height_cm" | trait == "SLA_cm2_g") %>% filter(key != "diff", key != "prop_diff") %>% 
+trait_mean <- traitMean %>% ungroup() %>%  mutate(Trait = plyr::mapvalues(Trait, from = c("SLA_cm2_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "N_percent", "C_percent", "P_Ave", "CN_ratio", "dC13_percent", "dN15_percent", "Dry_Mass_g", "Plant_Height_cm"), to = c("`SLA`*` `*(cm^2/g)", "`LDMC`*` `*(g/g)", "'Leaf'*' '*'Area'*' '*(cm^2)", "'Leaf'*' '*'Thickness'*' '*(mm)", "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')", "'Dry'*' '*'Mass'*' '*'(g)'", "'Plant'*' '*'Height'*' '*'(cm)'"))) %>% 
+  mutate(Trait = factor(Trait, levels = c("'Plant'*' '*'Height'*' '*'(cm)'", "`SLA`*` `*(cm^2/g)", "'Dry'*' '*'Mass'*' '*'(g)'","'Leaf'*' '*'Area'*' '*(cm^2)",  "'Leaf'*' '*'Thickness'*' '*(mm)", "`LDMC`*` `*(g/g)",  "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')" )))  %>% 
+  filter(Year == "2015") %>% 
+  filter(Year == 2015) %>% 
+  #gather(key = key, value = value, -Site, -Year, -PlotID, -Trait, -Treatment, -Site_trt) %>%  #filter(trait == "Dry_Mass_g" | trait == "LDMC" | trait == "Leaf_Area_cm2" | trait == "Leaf_Thickness_Ave_mm" | trait == "Plant_Height_cm" | trait == "SLA_cm2_g") %>% #filter(key != "diff", key != "prop_diff") %>% 
   filter(PlotID != "CAS-4", PlotID != "CAS-9", PlotID != "CAS-10", PlotID != "CAS-6") %>% 
-  ggplot(aes(x = Site, y = value, fill = paste(Treatment, key))) +
-  geom_boxplot() +
-  geom_abline(slope = 0, intercept = 0) +
-  scale_fill_manual(values = c("lightgray", "darkgray", "red", "darkred")) +
+  group_by(Trait) %>% 
+  mutate(y_max = max(mean), y_min = min(mean)) %>% 
+  ggplot() +
+  geom_boxplot(aes(x = Site, y = mean, fill = Treatment)) +
+  scale_fill_manual(values = c("darkgray", "red")) +
+  geom_blank(aes(y = y_max + 0.1*abs(y_max))) +
   ylab("CWM Trait Value") +
   xlab("Habitat Type") +
-  theme(text = element_text(size = 20)) +
-  facet_wrap(~trait, scales = "free")
+  theme_classic() +
+  theme(text = element_text(size = 15),
+        strip.background = element_blank(),
+        legend.position = "top") +
+  facet_wrap(~Trait, scales = "free", labeller = label_parsed) +
+  geom_text(aes(label = text, x = 0, y = Inf, hjust = -0.15, vjust = 1), size = 3.5, color = "black",  data = anova_text_trait) 
 
-library(cati)
+tiff("plots/trait_mean.tiff", width = 9, height = 6, units = "in", res = 400)
+trait_mean
+dev.off()
 
+
+traitMean <- traitMean %>% 
+  mutate(itv_diff = mean-mean_noitv)
+
+t_test_itv <- traitMean %>% 
+  group_by(Trait, Site, Treatment) %>% 
+  summarise(P = t.test(itv_diff, mu = 0)$p.value,
+            Sig = ifelse(P < 0.05, "*", ifelse(P<0.1 & P > 0.05, "+", "")),
+            MaxWidth = max(itv_diff))%>%
+  ungroup() %>% 
+  mutate(Trait = plyr::mapvalues(Trait, from = c("SLA_cm2_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "N_percent", "C_percent", "P_Ave", "CN_ratio", "dC13_percent", "dN15_percent", "Dry_Mass_g", "Plant_Height_cm"), to = c("`SLA`*` `*(cm^2/g)", "`LDMC`*` `*(g/g)", "'Leaf'*' '*'Area'*' '*(cm^2)", "'Leaf'*' '*'Thickness'*' '*(mm)", "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')", "'Dry'*' '*'Mass'*' '*'(g)'", "'Plant'*' '*'Height'*' '*'(cm)'"))) %>% 
+  mutate(Trait = factor(Trait, levels = c("'Plant'*' '*'Height'*' '*'(cm)'", "`SLA`*` `*(cm^2/g)", "'Dry'*' '*'Mass'*' '*'(g)'","'Leaf'*' '*'Area'*' '*(cm^2)",  "'Leaf'*' '*'Thickness'*' '*(mm)", "`LDMC`*` `*(g/g)",  "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')" )))
+
+
+itv_plot <- traitMean %>% mutate(Trait = plyr::mapvalues(Trait, from = c("SLA_cm2_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "N_percent", "C_percent", "P_Ave", "CN_ratio", "dC13_percent", "dN15_percent", "Dry_Mass_g", "Plant_Height_cm"), to = c("`SLA`*` `*(cm^2/g)", "`LDMC`*` `*(g/g)", "'Leaf'*' '*'Area'*' '*(cm^2)", "'Leaf'*' '*'Thickness'*' '*(mm)", "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')", "'Dry'*' '*'Mass'*' '*'(g)'", "'Plant'*' '*'Height'*' '*'(cm)'"))) %>% 
+  mutate(Trait = factor(Trait, levels = c("'Plant'*' '*'Height'*' '*'(cm)'", "`SLA`*` `*(cm^2/g)", "'Dry'*' '*'Mass'*' '*'(g)'","'Leaf'*' '*'Area'*' '*(cm^2)",  "'Leaf'*' '*'Thickness'*' '*(mm)", "`LDMC`*` `*(g/g)",  "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')" ))) %>%
+  filter(Year == 2015) %>% 
+  ggplot() +
+  geom_boxplot(aes(x = Site, y = itv_diff, fill = Treatment)) +
+  geom_hline(aes(yintercept = 0)) +
+  geom_blank(aes(x = Site, y = itv_diff + itv_diff*0.6)) + 
+  scale_fill_manual(values = c("darkgray", "red")) +
+  theme_classic() +
+  theme(text = element_text(size = 15),
+        strip.background = element_blank(),
+        legend.position = "top") +
+  facet_wrap(~Trait, scales = "free_y", labeller = label_parsed) +
+  geom_text(aes(label = Sig, y = Inf, x = Site, group = Treatment, vjust = 1), position = position_dodge(0.75), data = t_test_itv, size = 4.5) +
+  xlab("Habitat Type") +
+  ylab("Mean Trait Value - Mean Trait Value (no ITV)")
+
+tiff("plots/itv_plot.tiff", width = 8.75, height = 6, units = "in", res = 400)
+itv_plot
+dev.off()
+
+
+#### plot 4: turnover vs intraspecific variation ####
 source("ITEX_analyses/inter_intra_anova.R")
-test <- traitMean %>% filter(Trait == "PC3") %>% filter(Year == 2015)
 
-#test <- traitMean %>% select(-mean_noitv, -diff, -prop_diff) %>% spread(key = trait, value = mean) %>% filter(Year == 2015)
-  
-aov_test <- trait.flex.anova(~1, mean, mean_noitv, data = test)
-aov_test
-plot(aov_test, use.percentage = T, legend.pos="none", main = "PC3")
+var_split <- traitMean %>%
+  group_by(Trait) %>% 
+  do(test = trait.flex.anova(~Site * Treatment, mean, mean_noitv, data = .)) 
+
+var_split_exp <- data.frame(RelSumSq.Turnover = 1000, RelSumSq.Intraspec. = 1000, RelSumSq.Covariation = 1000, RelSumSq.Total = 1000, trait = "E", level = "F")
+
+for(i in 1:nrow(var_split)){
+  out <- as.data.frame(var_split$test[[i]][2])
+  out$trait <- as.factor(rep(var_split[i,1], 5))
+  out$level <- rownames(out)
+  var_split_exp <- rbind(var_split_exp, out)
+}
+
+var_split <- var_split_exp %>% 
+  mutate(level = trimws(level)) %>% 
+  filter(RelSumSq.Turnover < 999) %>% 
+  rename(Turnover = RelSumSq.Turnover, Intraspecific = RelSumSq.Intraspec., Covariation = RelSumSq.Covariation, Total = RelSumSq.Total) %>% 
+  mutate(level = plyr::mapvalues(level, from = c("Site", "Site:Treatment"), to = c("Habitat", "Habitat:Treatment"))) %>% 
+  gather(key = variable, value = value, -trait, -level) %>% 
+  filter(variable == "Total") %>% 
+  filter(level != "Total") %>% 
+  mutate(level = factor(level, levels = c("Habitat", "Treatment", "Habitat:Treatment", "Residuals"))) %>% 
+  mutate(level = plyr::mapvalues(level, from = c("Habitat", "Treatment", "Habitat:Treatment", "Residuals"), to = c("H", "T", "HxT", "Resid"))) %>% 
+  mutate(trait = plyr::mapvalues(trait, from = c("SLA_cm2_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "N_percent", "C_percent", "P_Ave", "CN_ratio", "dC13_percent", "dN15_percent", "Dry_Mass_g", "Plant_Height_cm"), to = c("`SLA`*` `*(cm^2/g)", "`LDMC`*` `*(g/g)", "'Leaf'*' '*'Area'*' '*(cm^2)", "'Leaf'*' '*'Thickness'*' '*(mm)", "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')", "'Dry'*' '*'Mass'*' '*'(g)'", "'Plant'*' '*'Height'*' '*'(cm)'"))) %>% 
+  mutate(trait = factor(trait, levels = c("'Plant'*' '*'Height'*' '*'(cm)'", "`SLA`*` `*(cm^2/g)", "'Dry'*' '*'Mass'*' '*'(g)'","'Leaf'*' '*'Area'*' '*(cm^2)",  "'Leaf'*' '*'Thickness'*' '*(mm)", "`LDMC`*` `*(g/g)",  "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')" )))
+
+varpart_graph <- var_split_exp %>% 
+  mutate(level = trimws(level)) %>% 
+  filter(RelSumSq.Turnover < 999) %>% 
+  rename(Turnover = RelSumSq.Turnover, Intraspecific = RelSumSq.Intraspec., Covariation = RelSumSq.Covariation, Total = RelSumSq.Total) %>% 
+  mutate(level = plyr::mapvalues(level, from = c("Site", "Site:Treatment"), to = c("Habitat", "Habitat:Treatment"))) %>% 
+  gather(key = variable, value = value, -trait, -level) %>% 
+  filter(variable != "Covariation", level != "Total", variable != "Total") %>% 
+  mutate(level = factor(level, levels = c("Habitat", "Treatment", "Habitat:Treatment", "Residuals"))) %>% 
+  mutate(level = plyr::mapvalues(level, from = c("Habitat", "Treatment", "Habitat:Treatment", "Residuals"), to = c("H", "T", "HxT", "Resid"))) %>% 
+  mutate(trait = plyr::mapvalues(trait, from = c("SLA_cm2_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "N_percent", "C_percent", "P_Ave", "CN_ratio", "dC13_percent", "dN15_percent", "Dry_Mass_g", "Plant_Height_cm"), to = c("`SLA`*` `*(cm^2/g)", "`LDMC`*` `*(g/g)", "'Leaf'*' '*'Area'*' '*(cm^2)", "'Leaf'*' '*'Thickness'*' '*(mm)", "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')", "'Dry'*' '*'Mass'*' '*'(g)'", "'Plant'*' '*'Height'*' '*'(cm)'"))) %>% 
+  mutate(trait = factor(trait, levels = c("'Plant'*' '*'Height'*' '*'(cm)'", "`SLA`*` `*(cm^2/g)", "'Dry'*' '*'Mass'*' '*'(g)'","'Leaf'*' '*'Area'*' '*(cm^2)",  "'Leaf'*' '*'Thickness'*' '*(mm)", "`LDMC`*` `*(g/g)",  "'N'*' '*'(%)'", "'C'*' '*'(%)'", "'P'*' '*'(%)'", "'C'*':'*'N'", "paste(delta^13, 'C'*' '*'(\u2030)')", "paste(delta^15, 'N'*' '*'(\u2030)')" ))) %>% 
+  ggplot() +
+  geom_bar(aes(x = level, y = value, fill = variable), stat = "identity") +
+  geom_point(aes(x = level, y  = value), data = var_split, size = 1) +
+    facet_wrap(~trait, nrow = 3, labeller = label_parsed) +
+  theme_classic() +
+  theme(text = element_text(size = 15), legend.position = "top",
+        strip.background = element_blank()) +
+  xlab(NULL) +
+  ylab("Proportion Variation Explained") +
+  scale_fill_manual(values = c("blue", "darkorange"), name = "Source of Variation") +
+  scale_x_discrete(drop = FALSE)
+
+tiff(file = "plots/varpart_graph.tiff", width = 7.5, height = 9, units = "in", res = 400)
+varpart_graph
+dev.off()
 
 
+#### Old code ####
+#try doing var_split by site to isolate the treatment effect and look at differences between sites
+var_split_site <- traitMean %>%
+  group_by(Trait, Site) %>% 
+  do(test = trait.flex.anova(~Treatment, mean, mean_noitv, data = .)) 
 
+var_split_site_exp <- data.frame(RelSumSq.Turnover = 1000, RelSumSq.Intraspec. = 1000, RelSumSq.Covariation = 1000, RelSumSq.Total = 1000, trait = "E", site = "G", level = "F")
 
-traitMean %>% filter(trait == "Plant_Height_cm", Year == "2015") %>% 
-  ggplot(aes(x = Site, y = mean, fill = Treatment)) +
-  geom_boxplot()
+for(i in 1:nrow(var_split_site)){
+  out <- as.data.frame(var_split_site$test[[i]][2])
+  out$trait <- as.factor(rep(var_split_site[i,1], 3))
+  out$site <- as.factor(rep(var_split_site[i,2], 3))
+  out$level <- rownames(out)
+  var_split_site_exp <- rbind(var_split_site_exp, out)
+}
 
-
-
-test <- traitsITEX_SV_2018 %>% 
-  select(Treatment, Taxon, Plant_Height_cm, Dry_Mass_g, Leaf_Area_cm2, Leaf_Thickness_Ave_mm, SLA_cm2_g, LDMC) %>% 
-  gather(key = trait, value = value, -Treatment, -Taxon) %>% 
-  group_by(trait) %>% 
-  do(out = varcomp(lme(value~1, random=~1|Taxon, data=., na.action = na.omit), 1))
-
-varpart_test <- as.data.frame(rbind(unlist(test[[2]][1]), unlist(test[[2]][2]), unlist(test[[2]][3]), unlist(test[[2]][4]), unlist(test[[2]][5]), unlist(test[[2]][6])))
-varpart_test$Trait <- c("Dry_Mass_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "Plant_Height_cm", "SLA_cm2_g")
-
-varpart_test %>% 
-  gather(key = level, value = Percent.variance.100, -Trait) %>% 
-ggplot(aes(x = Trait, y = Percent.variance.100, fill = level)) + 
-  geom_bar(stat="identity") + 
-  labs(y = "Percent variance" , fill="Level") + 
-  scale_fill_manual(values=c("#003366", "#0066CC")) + 
-  theme_bw() + 
-  theme(text = element_text(size = 12),
-        axis.text.x = element_text(size = 15),
-        legend.title = element_text(size = 15),
-        legend.text = element_text(size = 15),
-        axis.title.y = element_text(size = 15),
-        strip.text = element_text(size = 8))
+var_split_site_exp %>% 
+  filter(RelSumSq.Turnover < 999) %>% 
+  rename(Turnover = RelSumSq.Turnover, Intraspecific = RelSumSq.Intraspec., Covariation = RelSumSq.Covariation, Total = RelSumSq.Total) %>% 
+  gather(key = variable, value = value, -trait, -level, -site) %>% 
+  filter(variable != "Total", level != "Total") %>% 
+  mutate(trait = plyr::mapvalues(trait, from = c("SLA_cm2_g", "LDMC", "Leaf_Area_cm2", "Leaf_Thickness_Ave_mm", "N_percent", "C_percent", "P_Ave", "CN_ratio", "dC13_percent", "dN15_percent", "Dry_Mass_g", "Plant_Height_cm"), to = c("SLA", "LDMC", "'Leaf'*' '*'Area'", "'Leaf'*' '*'Thickness'", "'%'*'N'", "'%'*'C'", "'%'*'P'", "'C'*':'*'N'", "paste(delta^13, 'C')", "paste(delta^15, 'N')", "'Dry'*' '*'Mass'*' '*'(g)'", "'Plant'*' '*'Height'*' '*'(cm)'"))) %>% 
+  mutate(trait = factor(trait, levels = c("SLA", "LDMC", "'Leaf'*' '*'Area'", "'Leaf'*' '*'Thickness'", "'%'*'N'", "'%'*'C'", "'%'*'P'", "'C'*':'*'N'", "paste(delta^13, 'C')", "paste(delta^15, 'N')", "'Dry'*' '*'Mass'*' '*'(g)'", "'Plant'*' '*'Height'*' '*'(cm)'"))) %>% 
+  ggplot(aes(x = level, y = value, fill = variable)) +
+  geom_bar(stat = "identity") +
+  facet_grid(trait~site, labeller = label_parsed) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90), text = element_text(size = 15), legend.position = "right") +
+  xlab(NULL) +
+  ylab("Proportion Variation Explained") +
+  scale_fill_manual(values = c("blue", "darkorange","forestgreen"), name = "Source of Variation")
