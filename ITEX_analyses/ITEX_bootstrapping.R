@@ -88,7 +88,7 @@ CWM_Bootstrapping <- function(dat, nrep = 100, samplesize = 200){
   
   # Site level weights and traits
   TraitWeights_site <- comm %>%
-    left_join(trait %>% select(-PlotID), by = c("Site", "Taxon")) %>% 
+    left_join(trait %>% select(-PlotID)) %>% 
     group_by(Year, Site, Taxon, Trait) %>% 
     mutate(weight = Abundance/n()) %>% 
     group_by(Year, Site, Trait) 
@@ -115,6 +115,7 @@ CWM_Bootstrapping <- function(dat, nrep = 100, samplesize = 200){
   BootstrapMoments <- rerun(.n = nrep, sample_n(TraitWeights_all, size = samplesize,  replace = TRUE, weight = weight)) %>%
     bind_rows(.id = "n") %>% 
     group_by(n, add = TRUE) %>% 
+    mutate(Value = as.numeric(Value)) %>% 
     # get all the happy moments
     summarize(Mean = mean(Value), Variance = var(Value), Skewness = skewness(Value), Kurtosis = kurtosis(Value))
   
