@@ -7,7 +7,10 @@ library("broom")
 library("lme4")
 
 #source("ImportITEX.R")
-CommunitySV_ITEX_2003_2015 <- read_csv(file = "community/cleaned_data/ITEX_Svalbard_2003_2015_Community_cleaned.csv")
+CommunitySV_ITEX_2003_2015 <- read_csv(file = "community/cleaned_data/ITEX_Svalbard_2003_2015_Community_cleaned.csv") %>% 
+  mutate(Site = case_when(Site == "BIS" ~ "SB",
+                          Site == "CAS" ~ "CH",
+                          Site == "DRY" ~ "DH"))
 
 #### CALCULATE COMMUNITY RESPONSES #### 
 CommResp <- CommunitySV_ITEX_2003_2015 %>% 
@@ -111,7 +114,7 @@ comm_fat_BIS <- CommunitySV_ITEX_2003_2015 %>%
   select(-Taxon, -FunctionalGroup) %>% 
   arrange(Year) %>% 
   spread(key = Spp, value = Abundance, fill = 0) %>% 
-  filter(Site == "BIS")
+  filter(Site == "SB")
 
 comm_fat_spp_BIS <- comm_fat_BIS %>% select(-(Site:Year))
 
@@ -126,7 +129,7 @@ comm_fat_CAS <- CommunitySV_ITEX_2003_2015 %>%
   select(-Taxon, -FunctionalGroup) %>% 
   arrange(Year) %>% 
   spread(key = Spp, value = Abundance, fill = 0) %>% 
-  filter(Site == "CAS")
+  filter(Site == "CH")
 
 comm_fat_spp_CAS <- comm_fat_CAS %>% select(-(Site:Year))
 
@@ -142,7 +145,7 @@ comm_fat_DRY <- CommunitySV_ITEX_2003_2015 %>%
   select(-Taxon, -FunctionalGroup) %>% 
   arrange(Year) %>% 
   spread(key = Spp, value = Abundance, fill = 0) %>% 
-  filter(Site == "DRY")
+  filter(Site == "DH")
 
 comm_fat_spp_DRY <- comm_fat_DRY %>% select(-(Site:Year))
 
@@ -151,7 +154,8 @@ NMDS_DRY <- metaMDS(comm_fat_spp_DRY, noshare = TRUE, try = 100)
 fNMDS <- fortify(NMDS_DRY) %>% 
   filter(Score == "sites") %>% 
   bind_cols(comm_fat_DRY %>% select(Site:Year)) %>% 
-  bind_rows(fNMDS_BIS, fNMDS_CAS)
+  bind_rows(fNMDS_BIS, fNMDS_CAS) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
 save(fNMDS, file = "community/cleaned_data/fNMDS.Rdata")
 load(file = "fNMDS.Rdata")
@@ -164,14 +168,80 @@ CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, s
   scale_shape_manual(values = c(1, 16)) + 
   scale_linetype_manual(values = c("dashed", "solid")) + 
   labs(x = "NMDS axis 1", y = "NMDS axis 2") +
+  annotate("text", x = 0.5, y = 0.5, label = "Year*") +
   facet_grid(~ Site) +
   theme_bw()
 
+ggsave(CommunityOrdination, filename = "CommunityOrdination.jpeg", dpi = 300)
+
 # Check if community composition changes in treatments and over time
-res <- fNMDS %>% 
-  group_by(Site) %>% 
-  do(fit = lm(NMDS1 ~ Treatment * Year, data = .))
-tidy(res, fit)
+fNMDS %>%
+  nest(data = -Site) %>% 
+  mutate(
+    fit = map(data, ~ lm(NMDS1 ~ Treatment * Year, data = .x)),
+    tidied = map(fit, tidy)
+  ) %>% 
+  unnest(tidied) %>% 
+  filter(p.value < 0.05,
+         term != "(Intercept)")
+
+
+### PLANT HEIGHT ###
+library(readxl)
+height <- read_excel(path = "community/data/ENDALEN_ALL-YEARS_TraitTrain.xlsx", sheet = "HEIGHT")
+
+height %>%
+  filter(SUBSITE %in% c("BIS-L", "CAS-L", "DRY-L")) %>% 
+  mutate(SUBSITE = recode(SUBSITE, "BIS-L" = "BIS", "CAS-L" = "CAS", "DRY-L" = "DRY")) %>% 
+  rename("Year" = "YEAR", "Site" = "SUBSITE", "Treatment" = "TREATMENT") %>%
+  mutate(log.h = log(HEIGHT)) %>% 
+  nest(data = -c(Site, Year)) %>% 
+  mutate(
+    fit = map(data, ~ lm(log.h ~ Treatment, data = .x)),
+    tidied = map(fit, tidy)
+  ) %>% 
+  unnest(tidied) %>% 
+  filter(p.value < 0.05,
+         term != "(Intercept)")
+
+
+height %>%
+  filter(SUBSITE %in% c("BIS-L", "CAS-L", "DRY-L"),
+         YEAR == 2015) %>% 
+  mutate(SUBSITE = recode(SUBSITE, "BIS-L" = "BIS", "CAS-L" = "CAS", "DRY-L" = "DRY")) %>% 
+  rename("Year" = "YEAR", "Site" = "SUBSITE", "Treatment" = "TREATMENT") %>%
+  group_by(Site, Treatment) %>% 
+  summarise(mean = mean(HEIGHT, na.rm = TRUE),
+            se = mean / sqrt(n()))
+
+dd <- height %>%
+  filter(SUBSITE %in% c("BIS-L", "CAS-L", "DRY-L")) %>% 
+  mutate(SUBSITE = recode(SUBSITE, "BIS-L" = "BIS", "CAS-L" = "CAS", "DRY-L" = "DRY")) %>% 
+  rename("Year" = "YEAR", "Site" = "SUBSITE", "Treatment" = "TREATMENT") %>%
+  mutate(log.h = log(HEIGHT)) %>% 
+  filter(Site == "CAS")
+
+fit <- lm(log.h ~ Treatment, data = dd)
+plot(fit)
+
+CanopyHeight <- height %>% 
+  filter(SUBSITE %in% c("BIS-L", "CAS-L", "DRY-L",
+                        YEAR == 2015)) %>% 
+  mutate(SUBSITE = recode(SUBSITE, "BIS-L" = "BIS", "CAS-L" = "CAS", "DRY-L" = "DRY")) %>% 
+  rename("Year" = "YEAR", "Site" = "SUBSITE", "Treatment" = "TREATMENT") %>% 
+  mutate(Site = case_when(Site == "BIS" ~ "SB",
+                          Site == "CAS" ~ "CH",
+                          Site == "DRY" ~ "DH")) %>% 
+  ggplot(aes(x = Site, y = HEIGHT, fill = Treatment)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("grey", "red")) +
+  labs(y = "Canopy height cm", x = "Habitat Type") +
+  annotate("text", x = 0.7, y = 30, label = "T *") +
+  theme_classic() +
+  theme(text = element_text(size = 20))
+
+ggsave(CanopyHeight, filename = "CanopyHeight.jpeg", dpi = 300)
+
 
 #### ORDINATION FOR TRAITS ####
 ItexHeight_2015 <- ItexHeight %>% 

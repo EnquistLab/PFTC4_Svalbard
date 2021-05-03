@@ -111,6 +111,9 @@ MonthlyTemp <- tibble(YearMonth = seq(from = as.Date("2004-09-15"),
          Date2 = ymd(paste(2020, month(YearMonth), day(YearMonth))),
          Type = factor(Type, levels = c("surface", "soil"))) %>% 
   filter(Year %in% c(2004, 2005, 2015:2018)) %>% 
+  mutate(Site = case_when(Site == "BIS" ~ "SB",
+                          Site == "CAS" ~ "CH",
+                          Site == "DRY" ~ "DH")) %>% 
   ggplot(aes(x = Date2, y = Value, group = interaction(Year, PlotID), colour = as.factor(Year), linetype = Treatment)) +
   geom_line() +
   labs(x = "", y = "Monthly temperature in °C") +
