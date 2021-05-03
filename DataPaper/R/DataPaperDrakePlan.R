@@ -53,8 +53,8 @@ ManuscriptDrakePlan <- drake::drake_plan(
 ### COMBINING THE DRAKE PLANS 
 MasterDrakePlan <-  bind_rows(DataDownloadPlan,
                               DataImportPlan,
-                              AnalysisFigurePlan,
-                              ManuscriptDrakePlan)
+                              AnalysisFigurePlan)
+                              #ManuscriptDrakePlan)
 
 #configure and make drake plan
 config <- drake::drake_config(MasterDrakePlan)

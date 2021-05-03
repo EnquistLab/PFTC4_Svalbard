@@ -39,14 +39,23 @@ DataImportPlan <- drake_plan(
   
   # community
   community_itex = read_csv(file = "cleaned_data/community/ITEX_Svalbard_2003_2015_Community_cleaned.csv"),
-  communit_gradient = read_csv(file = "cleaned_data/community/PFTC4_Svalbard_2018_Community_cleaned.csv"),
+  communit_gradient = read_csv(file = "cleaned_data/community/PFTC4_Svalbard_2018_Community_cleaned.csv") %>% 
+    filter(!is.na(Gradient)),
   
   # meta
   coordinates = read_excel(path = "cleaned_data/meta/PFTC4_Svalbard_Coordinates.xlsx"),
   
   # traits
-  traits_itex = read_csv(file = "cleaned_data/traits/PFTC4_Svalbard_2018_ITEX.csv"),
-  traits_gradient = read_csv(file = "cleaned_data/traits/PFTC4_Svalbard_2018_TraitsGradients.csv"),
+  traits_itex = read_csv(file = "cleaned_data/traits/PFTC4_Svalbard_2018_ITEX.csv") %>% 
+    select(Year, Treatment, Site:Leaf_Area_Total_cm2, P_percent, C_percent:dC13_permil, Flag, Comment, Flag_corrected, Remark_CN) %>% 
+    pivot_longer(cols = Plant_Height_cm:dC13_permil, names_to = "Traits", values_to = "Value") %>% 
+    filter(!is.na(Treatment)),
+  
+  traits_gradient = read_csv(file = "cleaned_data/traits/PFTC4_Svalbard_2018_TraitsGradients.csv") %>% 
+    select(Year, Treatment:Leaf_Area_Total_cm2, P_percent, C_percent:dC13_permil, Flag, Comment, Flag_corrected, Remark_CN) %>% 
+    pivot_longer(cols = Plant_Height_cm:dC13_permil, names_to = "Traits", values_to = "Value") %>% 
+    filter(!is.na(Treatment)),
+  
   traits_bryophytes = read_csv(file = "cleaned_data/traits/PFTC4_Svalbard_2018_Bryo_TraitsGradients.csv"),
   traits_saxy = read_csv(file = "cleaned_data/traits/PFTC4_Svalbard_Traits_2018_Saxy.csv")
   

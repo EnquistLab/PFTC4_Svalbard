@@ -2,7 +2,7 @@
 ITEX_Diversity <- function(community_itex){
   diversity_itex = community_itex %>% 
     mutate(Treatment = recode(Treatment, "CTL" = "Control")) %>% 
-    group_by(Year, Site, Treatment, PlotID) %>%  
+    group_by(Site, Treatment, PlotID) %>%  
     summarise(n = n(),
               Richness = n, 
               Diversity = diversity(Abundance), 
@@ -32,7 +32,7 @@ ITEX_Diversity_Figure <- function(diversity_itex){
     mutate(DiversityIndex = factor(DiversityIndex, levels = c("Richness", "Diversity", "Evenness", "propGraminoid", "propForb", "propShrub", "propLichen", "propBryophytes"))) %>% 
     ggplot(aes(x = factor(Year), y = Value, fill = Treatment)) +
     geom_boxplot() +
-    scale_colour_manual(values = c("grey", "red")) +
+    scale_fill_manual(values = c("grey", "red")) +
     labs(x = "", y = "Diversity index") +
     facet_grid(DiversityIndex ~ Site, scales = "free_y") +
     theme_bw()
@@ -96,8 +96,8 @@ ITEX_Ordination <- function(community_itex){
   return(fNMDS)
 }
 
-MakeITEXOrdination <- function(fNMDS){
-  ITEX_ordinationOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, shape = Treatment, linetype = Treatment)) +
+MakeITEXOrdination <- function(fNMDS_Itex){
+  ITEX_ordinationOrdination <- ggplot(fNMDS_Itex, aes(x = NMDS1, y = NMDS2, group = PlotID, shape = Treatment, linetype = Treatment)) +
     geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
     geom_path() + 
     coord_equal() +
@@ -108,12 +108,18 @@ MakeITEXOrdination <- function(fNMDS){
     facet_grid(~ Site) +
     theme_bw()
   
-  return()
+  return(ITEX_ordinationOrdination)
   
 }
 
 
 
+# Traits
 
+traits_itex %>% 
+  ggplot(aes(x = Value, fill = Site)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Mean trait value", y = "Density") +
+  facet_wrap(~Traits, scales = "free")
 
 

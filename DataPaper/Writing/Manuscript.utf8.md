@@ -10,7 +10,7 @@ address: |
 abstract: |
   to be added
 
-date: "`r format(Sys.Date(), '%d %B %Y')`"
+date: "23 September 2020"
 
 # These are LaTex settings to take care of floating figures/tables, line spacing, etc
 header-includes:
@@ -33,20 +33,11 @@ geometry: margin=0.8in
 
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE)
-#knitr::opts_chunk$set(fig.pos = 'p') # Places figures on their own pages
-options(digits = 2)
-theme_set(theme_bw(base_size = 12))
-#knitr::opts_chunk$set(out.width = '100%', dpi=300)
 
-```
 
 **Keywords:** biodiviersity, ecosystem function, arctic, traits, data
 
-```{r, include=FALSE}
-options(tinytex.verbose = TRUE)
-```
+
 
 ## Background and Summary
 Global climate warming is predicted to be more amplified in the Arctic compared to other regions of the world (IPCC, 2013) and has wide-ranging impacts on biodiversity and ecosystem functioning of arctic ecosystems. 
@@ -131,17 +122,28 @@ All taxon names were standardized using the Taxonomic Name Resolution Service38.
 
 ### Data collection methods
 
-``` {r response_variables, eval = TRUE, echo = FALSE, tab.cap = "Overview of sites or experiments and corresponding response variables"}
 
-tibble(Responses = c("Plant community compositon", "Plant functional traits", "Bryophyte traits", "Soil microclimate", "Leaf physiology", "CO2 efflux", "Poloploidy", "Remote sensing and spectral reflectance"),
-       Gradients = c(rep("X", 6), NA, "X"),
-       ITEX = c("X", "X", NA, NA, "?", "X", NA, "X"),
-       Polyploidy = c(NA, "X", NA, NA, NA, NA, "X", NA),
-       Fluxtower = c(NA, NA, NA, NA, NA, NA, NA, "X"),
-       Snowfence = c(NA, NA, NA, NA, NA, NA, NA, "X")) %>% 
-  knitr::kable()
-
-```
+\begin{tabular}{l|l|l|l|l|l}
+\hline
+Responses & Gradients & ITEX & Polyploidy & Fluxtower & Snowfence\\
+\hline
+Plant community compositon & X & X & NA & NA & NA\\
+\hline
+Plant functional traits & X & X & X & NA & NA\\
+\hline
+Bryophyte traits & X & NA & NA & NA & NA\\
+\hline
+Soil microclimate & X & NA & NA & NA & NA\\
+\hline
+Leaf physiology & X & ? & NA & NA & NA\\
+\hline
+CO2 efflux & X & X & NA & NA & NA\\
+\hline
+Poloploidy & NA & NA & X & NA & NA\\
+\hline
+Remote sensing and spectral reflectance & X & X & NA & X & X\\
+\hline
+\end{tabular}
 
 
 
@@ -197,7 +199,4 @@ Tomsts loggers (Pekka, Julia)
 
 
 ### ITEX
-```{r itex_diversity, eval = TRUE, echo = FALSE}
-readd(diversity_Itex_Figure)
-
-```
+![](Manuscript_files/figure-latex/itex_diversity-1.pdf)<!-- --> 
