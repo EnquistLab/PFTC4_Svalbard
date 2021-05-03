@@ -21,7 +21,7 @@ vignettes/*.pdf
 .Rproj.user
 
 # drake
-.drake/
+*.drake/
 
 #markdown cache
 *_cache/
