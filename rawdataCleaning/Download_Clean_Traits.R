@@ -6,6 +6,7 @@ source(file = "rawdataCleaning/Download_Raw_Data.R")
 library("readxl")
 library("tidyverse")
 library("lubridate")
+library("stringr")
 #devtools::install_github("gustavobio/tpldata")
 #devtools::install_github("gustavobio/tpl")
 library("tpl")
@@ -463,8 +464,11 @@ write_csv(traitsGradients_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_20
 # 3 ind of Betula nana in the data, no Site, PlotID info etc.
 traitsITEX_SV_2018 <- traitsSV2018 %>%
   filter(Gradient == "X") %>% 
-  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient)
+  select(-Length_Ave_Moss_cm, -GreenLength_Ave_Moss_cm, -Length_1_cm, -Length_2_cm, -Length_3_cm, -GreenLength_1_cm, -GreenLength_2_cm, -GreenLength_3_cm, -Gradient) %>% 
+  mutate(PlotID = str_extract(PlotID, "[0-9]+"),
+         PlotID = paste(Site, PlotID, sep = "-"))
 write_csv(traitsITEX_SV_2018, path = "traits/cleaned_Data/PFTC4_Svalbard_2018_ITEX.csv", col_names = TRUE)
+
 
 # Mosses
 traitsGradients_Bryophytes_SV_2018 <- traitsSV2018 %>% 
