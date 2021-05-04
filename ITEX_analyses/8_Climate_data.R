@@ -1,22 +1,7 @@
 #### MAKING FIGURES AND TEST OTC VS CTL ####
 
 ## ----ClimateTempPlot
-library("tidyverse")
-library("lubridate")
-library("broom")
-library("lme4")
-library("patchwork")
-
-# import data
-# weather station data
-WeatherStation <- read_csv(file = "climate/data_clean/ItexSvalbard_Climate_2015_2018.csv")
-
-# plot level temperature loggers
-ItexSvalbard_Temp_2005_2015 <- read_csv(file = "climate/data_clean/ItexSvalbard_Temp_2005_2015.csv") %>% 
-  mutate(Site = case_when(Site == "BIS" ~ "SB",
-                          Site == "CAS" ~ "CH",
-                          Site == "DRY" ~ "DH"))
-
+source("ITEX_analyses/2_Import_data.R")
 
 #### CALCULATE DAILY AND MONTHLY VALUES ####
 
