@@ -90,17 +90,16 @@ trait_imp_null %>%
 CWM <- trait_np_bootstrap(trait_imp, nrep = 100, sample_size = 200)
 CWM_notiv <- trait_np_bootstrap(trait_imp_null, nrep = 100, sample_size = 200)
 
-CWM_mean <- trait_summarise_boot_moments(BootstrapMoments = CWM) %>% 
-  select(Site:Mean) %>% 
-  select(-n) %>% 
-  rename("mean" = "Mean")
-CWM_notiv_mean <- trait_summarise_boot_moments(BootstrapMoments = CWM_notiv) %>% 
-  select(Site:Mean) %>% 
-  select(-n) %>% 
-  rename("mean_noitv" = "Mean")
+CWM_mean <- trait_summarise_boot_moments(CWM) %>% 
+  select(Site:mean) 
 
-traitMean <- CWM_mean %>% 
+CWM_notiv_mean <- trait_summarise_boot_moments(CWM_notiv) %>% 
+  select(Site:mean) %>% 
+  rename("mean_noitv" = "mean")
+
+traitMean1 <- CWM_mean %>% 
   left_join(CWM_notiv_mean) %>% 
+  select(-n) %>% 
   mutate(Year = 2015)
 
 save(traitMean, file = "traits/cleaned_data/traitMean.RData")

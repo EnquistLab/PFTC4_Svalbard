@@ -68,3 +68,200 @@ CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, s
 
 ggsave(CommunityOrdination, filename = "ITEX_analyses/output/Fig_S3_CommunityOrdination.jpeg", width = 8, height = 3.5, dpi = 300)
 
+
+
+#### plot 1: change in community metrics ####
+CommunitySV_ITEX_2003_2015 <- CommunitySV_ITEX_2003_2015 %>% 
+  filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") 
+
+CommResp <- CommResp %>% ungroup() %>% 
+  filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") %>% 
+  mutate(Site = plyr::mapvalues(Site, from = c("BIS", "CAS", "DRY"), to = c("SB", "CH", "DH"))) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
+
+
+metaItex <- CommunitySV_ITEX_2003_2015 %>% 
+  distinct(Site, Treatment, PlotID)
+
+#multivariate community distances
+comm_distances <- CommunitySV_ITEX_2003_2015 %>% 
+  select(-Spp, -FunctionalGroup) %>% 
+  filter(Year != 2009) %>% 
+  spread(key = Taxon, value = Abundance, fill = 0) %>% 
+  group_by(PlotID) %>% 
+  do( data_frame(out = as.vector(vegdist(select(., -(Site:Year)), method = "bray")))) %>% 
+  left_join(metaItex)  %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
+
+#calculate change in community metrics
+metric_plot_dist <- CommResp %>% 
+  filter(Year != 2009) %>% 
+  gather(key = response, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
+  group_by(Treatment, PlotID, Site, response) %>% 
+  summarize(dist = diff(value))%>% 
+  #left_join(soil_moisture2003, by = "PlotID") %>% 
+  #left_join(soil_moisture2004, by = "PlotID") %>% 
+  filter(response == "Richness" | response == "Diversity" | response == "Evenness" | response == "sumAbundance" | response == "totalGraminoid" | response == "totalForb" | response == "totalShrub" | response == "propLichen" | response == "propBryo")
+#left_join(soil_moisture2004, by = "PlotID") %>% 
+#left_join(tpi, by = "PlotID")
+
+comm_distances_merge <- comm_distances %>% 
+  rename("dist" = "out") %>% 
+  mutate(response = "Bray Curtis Distance")
+
+metric_plot_dist <- bind_rows(metric_plot_dist, comm_distances_merge)
+
+t_test <- metric_plot_dist %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>% 
+  dplyr::filter(response != "Forb Abundance") %>% 
+  filter(response != "Bryophyte Abundance") %>% 
+  filter(response != "Lichen Abundance") %>% 
+  droplevels() %>% 
+  group_by(response, Site, Treatment) %>% 
+  summarise(P = t.test(dist, mu = 0)$p.value,
+            Sig = ifelse(P < 0.05, "*", ifelse(P<0.1 & P > 0.05, "+", "")),
+            MaxWidth = max(dist))%>% ungroup() %>% 
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+
+
+anova_t <- metric_plot_dist %>% 
+  group_by(response) %>% 
+  nest(data = -response) %>% 
+  mutate(
+    aov = map(data, ~ aov(dist ~ Treatment*Site, data = .x)),
+    aov_tidy = map(aov, tidy)
+  ) 
+
+anova_t <- anova_t %>% 
+  select(response, aov_tidy) %>% 
+  unnest(aov_tidy)
+
+anova_text <- anova_t %>% ungroup() %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>% 
+  mutate(term = plyr::mapvalues(term, from = c("Treatment", "Site", "Treatment:Site"), to = c("T", "H", "TxH"))) %>% 
+  filter(term != "Residuals") %>% 
+  mutate(test = paste(term, ifelse(p.value < 0.05, "*", ifelse(p.value<0.1 & p.value > 0.05, "+", "")), sep = " ")) %>% 
+  mutate(test = ifelse(grepl("\\*", test), test, ifelse(grepl("\\+", test), test, NA))) %>% 
+  pivot_wider(id_cols = response, names_from = term, values_from = test) %>% 
+  mutate(T = ifelse(is.na(T), "", T)) %>% 
+  mutate(H = ifelse(is.na(H), "", H)) %>% 
+  mutate(text = trimws(ifelse(!is.na(TxH), TxH, paste(T, H)))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+
+
+metric_change <- metric_plot_dist %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>% 
+  group_by(response) %>% 
+  filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>% 
+  mutate(y_max = max(dist), y_min = min(dist)) %>% 
+  #filter(Year != 2003) %>% 
+  ggplot() +
+  geom_hline(yintercept = 0) +
+  geom_boxplot(aes(x = Site, y = dist, fill = Treatment)) +
+  scale_fill_manual(values = c("darkgray", "red")) +
+  facet_wrap(~response, scales = "free") +
+  ylab("Change in Metric") +
+  xlab("Habitat Type") +
+  theme_classic() +
+  theme(text = element_text(size = 15), 
+        legend.position = "top",
+        legend.direction = "horizontal",
+        strip.background = element_blank())+
+  #stat_compare_means(aes(group = Site), label = "p.signif", method = "anova", hide.ns = F, label.x.npc = 0.05, label.y.npc = 0.05)+
+  #stat_compare_means(aes(x = Site, y = dist, group = Treatment), label = "p.signif", method = "anova", hide.ns = T, label.y.npc = 0) +
+  geom_blank(aes(y = y_min + 0.5*y_min)) +
+  geom_blank(aes(y = y_max + 0.4*y_max)) +
+  geom_text(aes(label = text, x = 0.5, y = Inf, hjust = 0, vjust = 2), size = 4, color = "black",  data = anova_text) +
+  geom_text(aes(label = Sig, x = Site, y = -Inf, hjust = 0.5, vjust = 0, group = Treatment), size = 6, position = position_dodge(0.75),color = "black",  data = t_test)
+
+jpeg("ITEX_analyses/output/Fig_1_metric_change.jpg", width = 8, height = 6, units = "in", res = 400)
+metric_change
+dev.off()
+
+#### Figure S4 change in other community metrics ####
+t_test_supp <- metric_plot_dist %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>% 
+  filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>% 
+  droplevels(.) %>% 
+  group_by(response, Site, Treatment) %>% 
+  summarise(P = t.test(dist, mu = 0)$p.value,
+            Sig = ifelse(P < 0.05, "*", ifelse(P<0.1 & P > 0.05, "+", "")),
+            MaxWidth = max(dist))%>% ungroup() %>% 
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+
+
+anova_text_supp <- anova_t %>% ungroup() %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>% 
+  mutate(term = plyr::mapvalues(term, from = c("Treatment", "Site", "Treatment:Site"), to = c("T", "H", "TxH"))) %>% 
+  filter(term != "Residuals") %>% 
+  mutate(test = paste(term, ifelse(p.value < 0.05, "*", ifelse(p.value<0.1 & p.value > 0.05, "+", "")), sep = " ")) %>% 
+  mutate(test = ifelse(grepl("\\*", test), test, ifelse(grepl("\\+", test), test, NA))) %>% 
+  pivot_wider(id_cols = response, names_from = term, values_from = test) %>% 
+  mutate(T = ifelse(is.na(T), "", T)) %>% 
+  mutate(H = ifelse(is.na(H), "", H)) %>% 
+  mutate(text = trimws(ifelse(!is.na(TxH), TxH, paste(T, H)))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+
+
+metric_change_supp <- metric_plot_dist %>% filter(response != "Diversity") %>% 
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>% 
+  group_by(response) %>% 
+  filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>% 
+  mutate(y_max = max(dist), y_min = min(dist)) %>% 
+  #filter(Year != 2003) %>% 
+  ggplot() +
+  geom_hline(yintercept = 0) +
+  geom_boxplot(aes(x = Site, y = dist, fill = Treatment)) +
+  scale_fill_manual(values = c("darkgray", "red")) +
+  facet_wrap(~response, scales = "free") +
+  ylab("Change in Metric") +
+  xlab("Habitat Type") +
+  theme_classic() +
+  theme(text = element_text(size = 15), 
+        legend.position = "top",
+        legend.direction = "horizontal",
+        strip.background = element_blank())+
+  #stat_compare_means(aes(group = Site), label = "p.signif", method = "anova", hide.ns = F, label.x.npc = 0.05, label.y.npc = 0.05)+
+  #stat_compare_means(aes(x = Site, y = dist, group = Treatment), label = "p.signif", method = "anova", hide.ns = T, label.y.npc = 0) +
+  geom_blank(aes(y = y_min + 0.5*y_min)) +
+  geom_blank(aes(y = y_max + 0.4*y_max)) +
+  geom_text(aes(label = text, x = 0.5, y = Inf, hjust = 0, vjust = 2), size = 4, color = "black",  data = anova_text_supp) +
+  geom_text(aes(label = Sig, x = Site, y = -Inf, hjust = 0.5, vjust = 0, group = Treatment), size = 6, position = position_dodge(0.75),color = "black",  data = t_test_supp)
+
+jpeg("ITEX_analyses/output/Fig_S4_metric_change_supp.jpg", width = 8, height = 4, units = "in", res = 400)
+metric_change_supp
+dev.off()
+
+
+#### Figure S5. change by year ####
+
+metric_time <- CommResp %>% 
+  select(Year, Site, Treatment, Richness, Evenness, totalForb, totalShrub, totalGraminoid, propBryo, propLichen, PlotID) %>%
+  rename("Forb\nAbundance" = totalForb, "Shrub\nAbundance" = totalShrub, "Graminoid\nAbundance" = totalGraminoid, "Bryo\nAbundance" = propBryo, "Lichen\nAbundance" = propLichen) %>% 
+  gather(key = metric, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
+  group_by(metric) %>% mutate(max_val = max(value)) %>% ungroup() %>% 
+  mutate(metric = factor(metric, levels = c("Richness", "Evenness", "Forb\nAbundance", "Graminoid\nAbundance", "Shrub\nAbundance", "Bryo\nAbundance", "Lichen\nAbundance"))) %>% 
+  ggplot(aes(x = as.factor(Year), y = value, fill = Treatment)) +
+  geom_boxplot() +
+  facet_grid(metric ~ Site, scales = "free", switch = "both") + 
+  scale_fill_manual(values = c("darkgray", "red")) +
+  ylab("Community Metric") +
+  xlab("Habitat Type") +
+  theme_classic() +
+  theme(text = element_text(size = 13),
+        panel.background = element_rect(color = "black", fill = NA),
+        strip.placement = "outside",
+        strip.background = element_rect(fill = "white", color = "white"),
+        legend.position = "top") +
+  stat_compare_means(aes(group = Treatment), label = "p.signif", method = "anova", hide.ns = T, label.y.npc = 0.9) +
+  geom_blank(aes(y = max_val + 0.2*max_val))
+
+jpeg("ITEX_analyses/output/Fig_S5_metric_time.jpg", width = 5, height = 9, units = "in", res = 400)
+metric_time
+dev.off()
