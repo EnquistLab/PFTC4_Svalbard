@@ -17,7 +17,9 @@ CommunitySV_ITEX_2003_2015 <- read_csv(file = "community/cleaned_data/ITEX_Svalb
   # rename sites
   mutate(Site = case_when(Site == "BIS" ~ "SB",
                           Site == "CAS" ~ "CH",
-                          Site == "DRY" ~ "DH"))
+                          Site == "DRY" ~ "DH")) %>% 
+  # remove iced Cassiope plots
+  filter(!PlotID %in% c("CAS-4", "CAS-6", "CAS-9", "CAS-10"))
 
 #import trait data
 load("traits/cleaned_data/traitMean.RData")
