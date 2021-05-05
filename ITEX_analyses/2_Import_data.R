@@ -12,6 +12,7 @@ library("patchwork")
 library("ggpubr")
 library("ggfortify")
 
+
 # import community data
 CommunitySV_ITEX_2003_2015 <- read_csv(file = "community/cleaned_data/ITEX_Svalbard_2003_2015_Community_cleaned.csv") %>% 
   # rename sites
