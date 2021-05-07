@@ -1,11 +1,9 @@
-###Generate CWM bootstrapping results
-library(tidyverse)
-#load community data and make it skinny and remove equisetum
-CommunitySV_ITEX_2003_2015 <- read.csv("community/cleaned_data/ITEX_Svalbard_2003_2015_Community_cleaned.csv")
+#load data
+source("ITEX_analyses/2_Import_data.R")
 
 comm <- CommunitySV_ITEX_2003_2015 %>%
   filter(FunctionalGroup != "lichen", FunctionalGroup != "moss", FunctionalGroup != "liverwort", FunctionalGroup != "fungi") %>% 
-  select(-Spp, -FunctionalGroup) %>% 
+  select(-FunctionalGroup) %>% 
   filter(Taxon != "equisetum arvense", Taxon != "equisetum scirpoides") %>% 
   filter(Year == 2015) %>% 
   mutate(Site_trt = paste0(Site, Treatment))
@@ -13,49 +11,26 @@ comm <- CommunitySV_ITEX_2003_2015 %>%
 #load trait data and make it skinny
 #load("traits/data/traitsITEX_SV_2018.Rdata")
 
-traitsITEX_SV_2018 <- read.csv("traits/data/PFTC4_Svalbard_2018_ITEX.csv")
-
-trait.pca <- traitsITEX_SV_2018 %>% 
-  select(-Country, -Year, -Project, -Latitude_N, -Longitude_E, -Elevation_m, -Genus, -Species, -ID, -Date, -Individual_nr, -Wet_Mass_g, -Wet_Mass_Total_g, -Dry_Mass_Total_g, -Leaf_Area_Total_cm2, -Leaf_Thickness_1_mm, -Leaf_Thickness_2_mm, -Leaf_Thickness_3_mm,  -NrLeaves, -Bulk_nr_leaves, -NumberLeavesScan, -Comment, -Data_entered_by, -Flag, -Batch, -CoeffVarP_Corrected, -N_replications, -Flag_corrected, -filename, -Samples_Nr, -Row, -Column, -Remark_CN, -sdP_Corrected) 
-
-#pca_res <- prcomp(trait.pca %>% select(-Taxon, -Site, -PlotID, -Treatment) %>% na.omit() , center = T, scale. = T)
-  
-  
-trait <- trait.pca %>% 
-  gather(key = Trait, value = Value, -PlotID, -Site, -Taxon, -Treatment) %>%
-  mutate(Site_trt = paste0(Site, Treatment)) %>% 
-  filter(!is.na(Value))
-
-library(nlme)
-library(ape)
-
-var_res <- data.frame()
-for(i in unique(trait$Trait)){
-v <- varcomp(lme(Value~1, random=~1|Taxon, data=trait %>% filter(Trait == i), na.action = na.omit), 1)[c(1,2)] 
-
-v$trait <- i
-
-v <- unlist(v)
-
-var_res <- bind_rows(var_res, v)
-
-}
+trait <- Svalbard_2018_ITEX_Traits %>% 
+  select(Treatment, Site, PlotID, Taxon, Trait, Value) %>% 
+  filter(!is.na(Value)) %>% 
+  mutate(Site_trt = paste0(Site, Treatment)) %>%  
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>% 
+  filter(Trait != "Wet_Mass_g")
 
 
-write.table(var_res, file = "varpart_results.csv")
-
-trait.null <- trait.pca %>% 
-  gather(key = Trait, value = Value, -PlotID, -Site, -Taxon, -Treatment) %>% 
+trait.null <- Svalbard_2018_ITEX_Traits %>% 
+  select(Treatment, Site, PlotID, Taxon, Trait, Value) %>%   
+  filter(!is.na(Value)) %>% 
   filter(Treatment == "CTL") %>% 
+  filter(Trait != "Wet_Mass_g") %>% 
   group_by(Taxon, Trait) %>% 
   summarize(Value = mean(as.numeric(Value), na.rm = T)) %>% 
-  right_join(trait.pca) %>% 
-  select(Taxon:PlotID) %>%  
-mutate(Site_trt = paste0(Site, Treatment)) %>% 
-  filter(!is.na(Value))
+  right_join(trait, by = c("Taxon", "Trait")) %>% 
+  select(-Value.y, "Value" = Value.x) %>%  
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) 
 
-library(traitstrap)
-
+set.seed(2525)
 trait_imp <- trait_impute(comm = comm, 
                           traits = trait, 
                           scale_hierarchy = c("Site", "Site_trt", "PlotID"),
@@ -63,7 +38,8 @@ trait_imp <- trait_impute(comm = comm,
                           taxon_col = "Taxon",
                           trait_col = "Trait",
                           value_col = "Value",
-                          abundance_col = "Abundance"
+                          abundance_col = "Abundance",
+                          min_n_in_sample = 2
                           )
 
 trait_imp_null <- trait_impute(comm = comm, 
@@ -73,7 +49,8 @@ trait_imp_null <- trait_impute(comm = comm,
                           taxon_col = "Taxon",
                           trait_col = "Trait",
                           value_col = "Value",
-                          abundance_col = "Abundance"
+                          abundance_col = "Abundance",
+                          min_n_in_sample = 2
 )
 
 
@@ -83,7 +60,6 @@ trait_imp %>%
   theme(axis.text.x = element_text(angle = 90))
 
 trait_imp_null %>% 
-  filter(Trait == "C_percent") %>% 
   autoplot(.) +
   theme(axis.text.x = element_text(angle = 90))
 
@@ -97,10 +73,23 @@ CWM_notiv_mean <- trait_summarise_boot_moments(CWM_notiv) %>%
   select(Site:mean) %>% 
   rename("mean_noitv" = "mean")
 
-traitMean1 <- CWM_mean %>% 
+traitMean4 <- CWM_mean %>% 
   left_join(CWM_notiv_mean) %>% 
   select(-n) %>% 
   mutate(Year = 2015)
+
+load("traits/cleaned_data/traitMean.rdata")
+
+
+
+test <- traitMean4 %>% 
+  left_join(traitMean, by = c("PlotID", "Trait"))
+
+plot(test$mean.x, test$mean.y)
+abline(0,1)
+plot(test$mean_noitv.x, test$mean_noitv.y)
+
+
 
 save(traitMean, file = "traits/cleaned_data/traitMean.RData")
 

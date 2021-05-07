@@ -12,7 +12,7 @@ CommResp <- CommunitySV_ITEX_2003_2015 %>%
             Evenness = Diversity/log(Richness),
             sumAbundance = sum(Abundance),
             propGraminoid = sum(Abundance[FunctionalGroup %in% c("graminoid")])/sumAbundance,
-            propForb = sum(Abundance[FunctionalGroup %in% c("forbsv")])/sumAbundance,
+            propForb = sum(Abundance[FunctionalGroup %in% c("forb")])/sumAbundance,
             propShrub = sum(Abundance[FunctionalGroup %in% c("eshrub", "dshrub")])/sumAbundance,
             propEShrub = sum(Abundance[FunctionalGroup %in% c("eshrub")])/sumAbundance,
             propDShrub = sum(Abundance[FunctionalGroup %in% c("dshrub")])/sumAbundance,
@@ -20,7 +20,7 @@ CommResp <- CommunitySV_ITEX_2003_2015 %>%
             propBryo = sum(Abundance[FunctionalGroup %in% c("moss", "liverwort")])/sumAbundance,
             totalVascular = sum(Abundance[FunctionalGroup %in% c("graminoid", "forbsv", "eshrub", "dshrub")]),
             totalGraminoid = sum(Abundance[FunctionalGroup %in% c("graminoid")]),
-            totalForb = sum(Abundance[FunctionalGroup %in% c("forbsv")]),
+            totalForb = sum(Abundance[FunctionalGroup %in% c("forb")]),
             totalShrub = sum(Abundance[FunctionalGroup %in% c("eshrub", "dshrub")])
   )
 
@@ -37,11 +37,11 @@ metaItex <- CommunitySV_ITEX_2003_2015 %>%
 
 #multivariate community distances
 comm_distances <- CommunitySV_ITEX_2003_2015 %>% 
-  select(-Spp, -FunctionalGroup) %>% 
+  select(-FunctionalGroup, -Elevation_m, -Latitude_N, -Longitude_E, -Flag) %>% 
   filter(Year != 2009) %>% 
   spread(key = Taxon, value = Abundance, fill = 0) %>% 
   group_by(PlotID) %>% 
-  do( data_frame(out = as.vector(vegdist(select(., -(Site:Year)), method = "bray")))) %>% 
+  do( data_frame(out = as.vector(vegdist(select(., -(Year:PlotID)), method = "bray")))) %>% 
   left_join(metaItex, by = "PlotID")  %>% 
   mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
