@@ -2,95 +2,47 @@
 source("ITEX_analyses/2_Import_data.R")
 
 
-#### NMDS ORDINATION ####
-set.seed(32)
+#### CALCULATE COMMUNITY RESPONSES #### 
+CommResp <- CommunitySV_ITEX_2003_2015 %>% 
+  group_by(Year, Site, Treatment, PlotID) %>%  
+  summarise(n = n(),
+            Richness = n, 
+            Diversity = diversity(Abundance), 
+            N1 = exp(Diversity),
+            Evenness = Diversity/log(Richness),
+            sumAbundance = sum(Abundance),
+            propGraminoid = sum(Abundance[FunctionalGroup %in% c("graminoid")])/sumAbundance,
+            propForb = sum(Abundance[FunctionalGroup %in% c("forb")])/sumAbundance,
+            propShrub = sum(Abundance[FunctionalGroup %in% c("eshrub", "dshrub")])/sumAbundance,
+            propEShrub = sum(Abundance[FunctionalGroup %in% c("eshrub")])/sumAbundance,
+            propDShrub = sum(Abundance[FunctionalGroup %in% c("dshrub")])/sumAbundance,
+            propLichen = sum(Abundance[FunctionalGroup %in% c("lichen")])/sumAbundance,
+            propBryo = sum(Abundance[FunctionalGroup %in% c("moss", "liverwort")])/sumAbundance,
+            totalVascular = sum(Abundance[FunctionalGroup %in% c("graminoid", "forbsv", "eshrub", "dshrub")]),
+            totalGraminoid = sum(Abundance[FunctionalGroup %in% c("graminoid")]),
+            totalForb = sum(Abundance[FunctionalGroup %in% c("forb")]),
+            totalShrub = sum(Abundance[FunctionalGroup %in% c("eshrub", "dshrub")])
+  )
 
-# BISTORTA
-comm_fat_BIS <- CommunitySV_ITEX_2003_2015 %>% 
-  select(-Taxon, -FunctionalGroup) %>% 
-  arrange(Year) %>% 
-  spread(key = Spp, value = Abundance, fill = 0) %>% 
-  filter(Site == "SB")
-
-comm_fat_spp_BIS <- comm_fat_BIS %>% select(-(Site:Year))
-
-NMDS_BIS <- metaMDS(comm_fat_spp_BIS, noshare = TRUE, try = 30)
-
-fNMDS_BIS <- fortify(NMDS_BIS) %>% 
-  filter(Score == "sites") %>% 
-  bind_cols(comm_fat_BIS %>% select(Site:Year))
-
-# CASSIOPE
-comm_fat_CAS <- CommunitySV_ITEX_2003_2015 %>% 
-  select(-Taxon, -FunctionalGroup) %>% 
-  arrange(Year) %>% 
-  spread(key = Spp, value = Abundance, fill = 0) %>% 
-  filter(Site == "CH")
-
-comm_fat_spp_CAS <- comm_fat_CAS %>% select(-(Site:Year))
-
-NMDS_CAS <- metaMDS(comm_fat_spp_CAS, noshare = TRUE, try = 100)
-
-fNMDS_CAS <- fortify(NMDS_CAS) %>% 
-  filter(Score == "sites") %>% 
-  bind_cols(comm_fat_CAS %>% select(Site:Year))
-
-
-# DRYAS
-comm_fat_DRY <- CommunitySV_ITEX_2003_2015 %>% 
-  select(-Taxon, -FunctionalGroup) %>% 
-  arrange(Year) %>% 
-  spread(key = Spp, value = Abundance, fill = 0) %>% 
-  filter(Site == "DH")
-
-comm_fat_spp_DRY <- comm_fat_DRY %>% select(-(Site:Year))
-
-NMDS_DRY <- metaMDS(comm_fat_spp_DRY, noshare = TRUE, try = 100)
-
-fNMDS <- fortify(NMDS_DRY) %>% 
-  filter(Score == "sites") %>% 
-  bind_cols(comm_fat_DRY %>% select(Site:Year)) %>% 
-  bind_rows(fNMDS_BIS, fNMDS_CAS) %>% 
-  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
-
-# Make figure
-CommunityOrdination <- ggplot(fNMDS, aes(x = NMDS1, y = NMDS2, group = PlotID, shape = Treatment, linetype = Treatment)) +
-  geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"))) +
-  geom_path() + 
-  coord_equal() +
-  scale_size_discrete(name = "Year", range = c(1.2, 2.5), limits = c("Other", "First"), breaks = c("First", "Other")) +
-  scale_shape_manual(values = c(1, 16)) + 
-  scale_linetype_manual(values = c("dashed", "solid")) + 
-  labs(x = "NMDS axis 1", y = "NMDS axis 2") +
-  annotate("text", x = 0.5, y = 0.5, label = "Year*") +
-  facet_grid(~ Site) +
-  theme_bw()
-
-ggsave(CommunityOrdination, filename = "ITEX_analyses/output/Fig_S3_CommunityOrdination.jpeg", width = 8, height = 3.5, dpi = 300)
-
-
-
-#### plot 1: change in community metrics ####
-CommunitySV_ITEX_2003_2015 <- CommunitySV_ITEX_2003_2015 %>% 
-  filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") 
-
-CommResp <- CommResp %>% ungroup() %>% 
-  filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") %>% 
-  mutate(Site = plyr::mapvalues(Site, from = c("BIS", "CAS", "DRY"), to = c("SB", "CH", "DH"))) %>% 
-  mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
+# CommResp <- CommResp %>% ungroup() %>% 
+#   filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") %>% 
+#   mutate(Site = plyr::mapvalues(Site, from = c("BIS", "CAS", "DRY"), to = c("SB", "CH", "DH"))) %>% 
+#   mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
 
 metaItex <- CommunitySV_ITEX_2003_2015 %>% 
   distinct(Site, Treatment, PlotID)
 
+#### plot 1: change in community metrics ####
+
 #multivariate community distances
 comm_distances <- CommunitySV_ITEX_2003_2015 %>% 
-  select(-Spp, -FunctionalGroup) %>% 
+  select(-FunctionalGroup, -Elevation_m, -Latitude_N, -Longitude_E, -Flag) %>% 
   filter(Year != 2009) %>% 
   spread(key = Taxon, value = Abundance, fill = 0) %>% 
   group_by(PlotID) %>% 
-  do( data_frame(out = as.vector(vegdist(select(., -(Site:Year)), method = "bray")))) %>% 
-  left_join(metaItex)  %>% 
+  do( data_frame(out = as.vector(vegdist(select(., -(Year:PlotID)), method = "bray")))) %>% 
+  left_join(metaItex, by = "PlotID")  %>% 
   mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
 #calculate change in community metrics
@@ -157,6 +109,7 @@ metric_change <- metric_plot_dist %>% filter(response != "Diversity") %>%
   group_by(response) %>% 
   filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>% 
   mutate(y_max = max(dist), y_min = min(dist)) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>% 
   #filter(Year != 2003) %>% 
   ggplot() +
   geom_hline(yintercept = 0) +
@@ -214,6 +167,7 @@ metric_change_supp <- metric_plot_dist %>% filter(response != "Diversity") %>%
   group_by(response) %>% 
   filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>% 
   mutate(y_max = max(dist), y_min = min(dist)) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>% 
   #filter(Year != 2003) %>% 
   ggplot() +
   geom_hline(yintercept = 0) +
@@ -246,7 +200,8 @@ metric_time <- CommResp %>%
   rename("Forb\nAbundance" = totalForb, "Shrub\nAbundance" = totalShrub, "Graminoid\nAbundance" = totalGraminoid, "Bryo\nAbundance" = propBryo, "Lichen\nAbundance" = propLichen) %>% 
   gather(key = metric, value = value, -Year, -Site, -Treatment, -PlotID) %>% 
   group_by(metric) %>% mutate(max_val = max(value)) %>% ungroup() %>% 
-  mutate(metric = factor(metric, levels = c("Richness", "Evenness", "Forb\nAbundance", "Graminoid\nAbundance", "Shrub\nAbundance", "Bryo\nAbundance", "Lichen\nAbundance"))) %>% 
+  mutate(metric = factor(metric, levels = c("Richness", "Evenness", "Forb\nAbundance", "Graminoid\nAbundance", "Shrub\nAbundance", "Bryo\nAbundance", "Lichen\nAbundance"))) %>%
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>% 
   ggplot(aes(x = as.factor(Year), y = value, fill = Treatment)) +
   geom_boxplot() +
   facet_grid(metric ~ Site, scales = "free", switch = "both") + 
@@ -265,3 +220,89 @@ metric_time <- CommResp %>%
 jpeg("ITEX_analyses/output/Fig_S5_metric_time.jpg", width = 5, height = 9, units = "in", res = 400)
 metric_time
 dev.off()
+
+
+
+#### NMDS ORDINATION ####
+set.seed(32)
+
+# BISTORTA
+comm_fat_BIS <- CommunitySV_ITEX_2003_2015 %>% 
+  select(-Taxon, -FunctionalGroup) %>% 
+  arrange(Year) %>% 
+  spread(key = Spp, value = Abundance, fill = 0) %>% 
+  filter(Site == "SB")
+
+comm_fat_spp_BIS <- comm_fat_BIS %>% select(-(Site:Year))
+
+NMDS_BIS <- metaMDS(comm_fat_spp_BIS, noshare = TRUE, try = 30)
+
+fNMDS_BIS <- fortify(NMDS_BIS) %>% 
+  filter(Score == "sites") %>% 
+  bind_cols(comm_fat_BIS %>% select(Site:Year))
+
+# CASSIOPE
+comm_fat_CAS <- CommunitySV_ITEX_2003_2015 %>% 
+  select(-Taxon, -FunctionalGroup) %>% 
+  arrange(Year) %>% 
+  spread(key = Spp, value = Abundance, fill = 0) %>% 
+  filter(Site == "CH")
+
+comm_fat_spp_CAS <- comm_fat_CAS %>% select(-(Site:Year))
+
+NMDS_CAS <- metaMDS(comm_fat_spp_CAS, noshare = TRUE, try = 100)
+
+fNMDS_CAS <- fortify(NMDS_CAS) %>% 
+  filter(Score == "sites") %>% 
+  bind_cols(comm_fat_CAS %>% select(Site:Year))
+
+
+# DRYAS
+comm_fat_DRY <- CommunitySV_ITEX_2003_2015 %>% 
+  select(-Taxon, -FunctionalGroup) %>% 
+  arrange(Year) %>% 
+  spread(key = Spp, value = Abundance, fill = 0) %>% 
+  filter(Site == "DH")
+
+comm_fat_spp_DRY <- comm_fat_DRY %>% select(-(Site:Year))
+
+NMDS_DRY <- metaMDS(comm_fat_spp_DRY, noshare = TRUE, try = 100)
+
+fNMDS <- fortify(NMDS_DRY) %>% 
+  filter(Score == "sites") %>% 
+  bind_cols(comm_fat_DRY %>% select(Site:Year)) %>% 
+  bind_rows(fNMDS_BIS, fNMDS_CAS)
+
+# Make figure
+  
+ 
+plot_annotation <- tibble(Site = c("SB", "CH", "DH"),
+                   label = c("Year*", "", "Year*"))
+CommunityOrdination <- fNMDS %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>% 
+  ggplot(aes(x = NMDS1, y = NMDS2)) +
+  geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"), shape = Treatment)) +
+  geom_path(aes(linetype = Treatment)) + 
+  coord_equal() +
+  scale_size_discrete(name = "Year", range = c(1.2, 2.5), limits = c("Other", "First"), breaks = c("First", "Other")) +
+  scale_shape_manual(values = c(1, 16)) + 
+  scale_linetype_manual(values = c("dashed", "solid")) + 
+  labs(x = "NMDS axis 1", y = "NMDS axis 2") +
+  geom_text(data = plot_annotation, aes(x = 0.5, y = 0.5, label = label)) +
+  facet_grid(~ fct_relevel(Site, "SB", "CH", "DH")) +
+  theme_bw()
+
+ggsave(CommunityOrdination, filename = "ITEX_analyses/output/Fig_S3_CommunityOrdination.jpeg", width = 8, height = 3.5, dpi = 300)
+
+
+
+# Check if community composition changes in treatments and over time
+fNMDS %>%
+  nest(data = -Site) %>% 
+  mutate(
+    fit = map(data, ~ lm(NMDS1 ~ Treatment * Year, data = .x)),
+    tidied = map(fit, tidy)
+  ) %>% 
+  unnest(tidied) %>% 
+  filter(p.value < 0.05,
+         term != "(Intercept)")
