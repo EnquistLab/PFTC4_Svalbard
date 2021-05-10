@@ -18,16 +18,11 @@ CommResp <- CommunitySV_ITEX_2003_2015 %>%
             propDShrub = sum(Abundance[FunctionalGroup %in% c("dshrub")])/sumAbundance,
             propLichen = sum(Abundance[FunctionalGroup %in% c("lichen")])/sumAbundance,
             propBryo = sum(Abundance[FunctionalGroup %in% c("moss", "liverwort")])/sumAbundance,
-            totalVascular = sum(Abundance[FunctionalGroup %in% c("graminoid", "forbsv", "eshrub", "dshrub")]),
+            totalVascular = sum(Abundance[FunctionalGroup %in% c("graminoid", "forb", "eshrub", "dshrub")]),
             totalGraminoid = sum(Abundance[FunctionalGroup %in% c("graminoid")]),
             totalForb = sum(Abundance[FunctionalGroup %in% c("forb")]),
             totalShrub = sum(Abundance[FunctionalGroup %in% c("eshrub", "dshrub")])
   )
-
-# CommResp <- CommResp %>% ungroup() %>% 
-#   filter(PlotID != "CAS-4", PlotID != "CAS-6", PlotID != "CAS-9", PlotID != "CAS-10") %>% 
-#   mutate(Site = plyr::mapvalues(Site, from = c("BIS", "CAS", "DRY"), to = c("SB", "CH", "DH"))) %>% 
-#   mutate(Site = factor(Site, levels = c("SB", "CH", "DH")))
 
 
 metaItex <- CommunitySV_ITEX_2003_2015 %>% 
@@ -226,52 +221,53 @@ dev.off()
 #### NMDS ORDINATION ####
 set.seed(32)
 
-# BISTORTA
-comm_fat_BIS <- CommunitySV_ITEX_2003_2015 %>% 
-  select(-Taxon, -FunctionalGroup) %>% 
+# SNOWBED (SB)
+comm_fat_SB <- CommunitySV_ITEX_2003_2015 %>% 
+  select(-c(FunctionalGroup:Flag)) %>% 
   arrange(Year) %>% 
-  spread(key = Spp, value = Abundance, fill = 0) %>% 
+  spread(key = Taxon, value = Abundance, fill = 0) %>% 
   filter(Site == "SB")
 
-comm_fat_spp_BIS <- comm_fat_BIS %>% select(-(Site:Year))
+comm_fat_spp_SB <- comm_fat_SB %>% select(-(Year:PlotID))
 
-NMDS_BIS <- metaMDS(comm_fat_spp_BIS, noshare = TRUE, try = 30)
+NMDS_SB <- metaMDS(comm_fat_spp_SB, noshare = TRUE, try = 30)
 
-fNMDS_BIS <- fortify(NMDS_BIS) %>% 
+fNMDS_SB <- fortify(NMDS_SB) %>% 
   filter(Score == "sites") %>% 
-  bind_cols(comm_fat_BIS %>% select(Site:Year))
+  bind_cols(comm_fat_SB %>% select(Year:PlotID))
 
-# CASSIOPE
-comm_fat_CAS <- CommunitySV_ITEX_2003_2015 %>% 
-  select(-Taxon, -FunctionalGroup) %>% 
+
+# CASSIOPE HEATH (CH)
+comm_fat_CH <- CommunitySV_ITEX_2003_2015 %>% 
+  select(-c(FunctionalGroup:Flag)) %>% 
   arrange(Year) %>% 
-  spread(key = Spp, value = Abundance, fill = 0) %>% 
+  spread(key = Taxon, value = Abundance, fill = 0) %>% 
   filter(Site == "CH")
 
-comm_fat_spp_CAS <- comm_fat_CAS %>% select(-(Site:Year))
+comm_fat_spp_CH <- comm_fat_CH %>% select(-(Year:PlotID))
 
-NMDS_CAS <- metaMDS(comm_fat_spp_CAS, noshare = TRUE, try = 100)
+NMDS_CH <- metaMDS(comm_fat_spp_CH, noshare = TRUE, try = 100)
 
-fNMDS_CAS <- fortify(NMDS_CAS) %>% 
+fNMDS_CH <- fortify(NMDS_CH) %>% 
   filter(Score == "sites") %>% 
-  bind_cols(comm_fat_CAS %>% select(Site:Year))
+  bind_cols(comm_fat_CH %>% select(Year:PlotID))
 
 
-# DRYAS
-comm_fat_DRY <- CommunitySV_ITEX_2003_2015 %>% 
-  select(-Taxon, -FunctionalGroup) %>% 
+# DRYAS HEATH
+comm_fat_DH <- CommunitySV_ITEX_2003_2015 %>% 
+  select(-c(FunctionalGroup:Flag)) %>% 
   arrange(Year) %>% 
-  spread(key = Spp, value = Abundance, fill = 0) %>% 
+  spread(key = Taxon, value = Abundance, fill = 0) %>% 
   filter(Site == "DH")
 
-comm_fat_spp_DRY <- comm_fat_DRY %>% select(-(Site:Year))
+comm_fat_spp_DH <- comm_fat_DH %>% select(-(Year:PlotID))
 
-NMDS_DRY <- metaMDS(comm_fat_spp_DRY, noshare = TRUE, try = 100)
+NMDS_DH <- metaMDS(comm_fat_spp_DH, noshare = TRUE, try = 100)
 
-fNMDS <- fortify(NMDS_DRY) %>% 
+fNMDS <- fortify(NMDS_DH) %>% 
   filter(Score == "sites") %>% 
-  bind_cols(comm_fat_DRY %>% select(Site:Year)) %>% 
-  bind_rows(fNMDS_BIS, fNMDS_CAS)
+  bind_cols(comm_fat_DH %>% select(Year:PlotID)) %>% 
+  bind_rows(fNMDS_SB, fNMDS_CH)
 
 # Make figure
   
@@ -282,7 +278,7 @@ CommunityOrdination <- fNMDS %>%
   mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>% 
   ggplot(aes(x = NMDS1, y = NMDS2)) +
   geom_point(aes(size = ifelse(Year == min(as.numeric(Year)), "First", "Other"), shape = Treatment)) +
-  geom_path(aes(linetype = Treatment)) + 
+  geom_path(aes(linetype = Treatment, group = PlotID)) + 
   coord_equal() +
   scale_size_discrete(name = "Year", range = c(1.2, 2.5), limits = c("Other", "First"), breaks = c("First", "Other")) +
   scale_shape_manual(values = c(1, 16)) + 
