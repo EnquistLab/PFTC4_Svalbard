@@ -21,20 +21,19 @@ CommunitySV_ITEX_2003_2015 <- read_csv(file = "community/cleaned_data/PFTC4_Sval
 #import trait data
 Svalbard_2018_ITEX_Traits <- read_csv(file = "traits/cleaned_data/PFTC4_Svalbard_2018_ITEX_Traits.csv") %>% 
   # remove iced Cassiope plots
-  filter(!PlotID %in% c("CH-4", "CH-6", "CH-9", "CH-10"))
+  filter(!PlotID %in% c("CH-4", "CH-6", "CH-9", "CH-10")) %>% 
+  # remove NP ratio from data. Not part of original analysis
+  filter(Trait != "NP_ratio")
 
 
 # import height data
-height_raw <- read_excel(path = "community/data/ENDALEN_ALL-YEARS_TraitTrain.xlsx", sheet = "HEIGHT")
+veg_structure_raw <- read_csv(file = "community/cleaned_data/PFTC4_Svalbard_2003_2015_ITEX_Vegetation_Structure.csv")
 
 
 
-# import climate data
+# import temperature and climate data
 # weather station data
-WeatherStation <- read_csv(file = "climate/data_clean/ItexSvalbard_Climate_2015_2018.csv")
+ItexSvalbard_Temp_2005_2015 <- read_csv(file = "climate/data_clean/PFTC4_Svalbard_2005_2018_ITEX_Temperature.csv")
+WeatherStation <- read_csv(file = "climate/data_clean/PFTC4_Svalbard_2015_2018_ITEX_Climate.csv")
 
-# plot level temperature loggers
-ItexSvalbard_Temp_2005_2015 <- read_csv(file = "climate/data_clean/ItexSvalbard_Temp_2005_2015.csv") %>% 
-  mutate(Site = case_when(Site == "BIS" ~ "SB",
-                          Site == "CAS" ~ "CH",
-                          Site == "DRY" ~ "DH"))
+                          
