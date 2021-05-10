@@ -229,6 +229,27 @@ itv_plot
 dev.off()
 
 
+#### Intraspecific vs. interspecific variation ####
+
+trait <- Svalbard_2018_ITEX_Traits
+
+library(nlme)
+library(ape)
+
+var_res <- data.frame()
+for(i in unique(trait$Trait)){
+  v <- varcomp(lme(Value~1, random=~1|Taxon, data=trait %>% filter(Trait == i), na.action = na.omit), 1)[c(1,2)] 
+  
+  v$trait <- i
+  
+  v <- unlist(v)
+  
+  var_res <- bind_rows(var_res, v)
+  
+}
+
+var_res
+
 #### turnover vs intraspecific variation ####
 source("ITEX_analyses/functions/inter_intra_anova.R")
 
