@@ -19,18 +19,6 @@ ggsave(CanopyHeight, filename = "ITEX_analyses/output/Fig_S6_CanopyHeight.jpeg",
 
 
 height %>%
-  mutate(log.h = log(Value)) %>% 
-  nest(data = -c(Site, Year)) %>% 
-  mutate(
-    fit = map(data, ~ lm(Value ~ Treatment, data = .x)),
-    tidied = map(fit, tidy)
-  ) %>% 
-  unnest(tidied) %>% 
-  filter(p.value < 0.05,
-         term != "(Intercept)")
-
-
-height %>%
   group_by(Site, Treatment) %>% 
   summarise(mean = mean(Value, na.rm = TRUE),
             se = mean / sqrt(n()))
