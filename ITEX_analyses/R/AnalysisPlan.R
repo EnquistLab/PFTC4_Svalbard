@@ -29,6 +29,10 @@ AnalysisPlan <- drake_plan(
   NMDS_result = NMDS_analysis(NMDS_output),
   
   
+  # Canopy height
+  Height_result = height_analysis(Height),
+
+  
   # Bootstrapping
   Trait_Mean = make_bootstrapping(Community, Traits),
   
@@ -72,6 +76,48 @@ AnalysisPlan <- drake_plan(
   
   ## Intra vs. Inter
   Var_Split_Exp = Intra_vs_Inter(Traits, Trait_Mean),
-  Var_Split = Intra_vs_Inter_var_split(Var_Split_Exp)
+  Var_Split = Intra_vs_Inter_var_split(Var_Split_Exp),
+  
+  
+  # Climate data
+  Monthly_Temp = calculate_temperature_means(Temperature),
+  Daily_Climate = calculate_climate_means(Climate),
+  
+  # Max temp
+  Max_Temp = Monthly_Temp %>%
+    filter(Variable == "Temperature") %>%
+    group_by(year(YearMonth)) %>%
+    summarise(max(Value)),
+  
+  # Temperature range winter vs summer in control plots
+  Temp_Range = Monthly_Temp %>%
+    filter(month(YearMonth) %in% c(1, 2, 3, 7),
+           Treatment == "CTL") %>%
+    mutate(time = case_when(month(YearMonth) %in% c(1, 2, 3) ~ "winter",
+                            TRUE ~ "summer")) %>%
+    group_by(LoggerLocation, time) %>%
+    summarise(mean = mean(Value),
+              se = sd(Value)/sqrt(n()),
+              min = min(Value),
+              max = max(Value),
+              diff = max - min),
+  
+  # monthlyTemp %>%
+  #   filter(month(YearMonth) == 1) %>%
+  #   group_by(LoggerLocation, Site) %>%
+  #   summarise(mean = mean(Value), min = min(Value), max = max(Value)) %>%
+  #   mutate(diff = max - min)
+  
+  # Temperature difference winter vs summer between OTC and Controls
+  Temp_Diff = Monthly_Temp %>%
+    filter(month(YearMonth) %in% c(1, 2, 3, 7)) %>%
+    mutate(time = case_when(month(YearMonth) %in% c(1, 2, 3) ~ "winter",
+                            TRUE ~ "summer")) %>%
+    group_by(LoggerLocation, Treatment, time, Site) %>%
+    summarise(mean = mean(Value)) %>%
+    pivot_wider(names_from = Treatment, values_from = mean) %>%
+    mutate(diff = OTC - CTL),
+  
+  Temperature_Analyses_results = temperature_analysis(Monthly_Temp)
   
 )

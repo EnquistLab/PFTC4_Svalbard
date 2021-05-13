@@ -20,6 +20,7 @@ library(ggfortify)
 library(traitstrap)
 library(nlme)
 library(ape)
+library(broom.mixed)
 
 # tricks
 pn <- . %>% print(n = Inf)
@@ -42,6 +43,7 @@ source("ITEX_analyses/R/Functions/CommunityFigures.R")
 source("ITEX_analyses/R/Functions/Trait_analyses.R")
 source("ITEX_analyses/R/Functions/TraitFigures.R")
 source("ITEX_analyses/R/Functions/inter_intra_anova.R")
+source("ITEX_analyses/R/Functions/Climate_analyses.R")
 
 ### MAKE DRAKE PLAN
 

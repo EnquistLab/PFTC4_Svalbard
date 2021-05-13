@@ -10,6 +10,9 @@ FigurePlan <- drake_plan(
   # Ordination
   Fig_S3_CommunityOrdination = make_ordination(NMDS_output),
   
+  # Height
+  Fig_S6_CanopyHeight = make_height_figure(Height),
+  
   # Trait PCA
   Fig_2_pca_plot = make_trait_pca_figure(trait_pca_info, pca_res),
   
@@ -20,7 +23,10 @@ FigurePlan <- drake_plan(
   Fig_4_itv_plot = make_itv_figure(Trait_Mean),
   
   # Inter vs intra
-  Fig_S7_varpart_graph = make_intra_vs_inter_figure(Var_Split_Exp, Var_Split)
+  Fig_S7_varpart_graph = make_intra_vs_inter_figure(Var_Split_Exp, Var_Split),
+  
+  # Climate plot
+  Fig_S1_FinalClimatePlot = make_climate_figure(Monthly_Temp, Daily_Climate)
   
 )
 

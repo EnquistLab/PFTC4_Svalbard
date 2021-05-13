@@ -177,4 +177,27 @@ NMDS_analysis <- function(NMDS_output){
 }
 
 
+height_analysis <- function(height){
+  
+  height_model <- height %>% 
+    nest(data = -Site) %>% 
+    mutate(
+      fit1 = map(data, ~ lmer(Value ~ Treatment + (1|PlotID), data = .x)),
+      fit2 = map(data, ~ lmer(Value ~ 1 + (1|PlotID), data = .x)),
+      tidy1 = map(fit1, glance),
+      tidy2 = map(fit2, glance)
+  )
+  
+  height_model_result <- bind_rows(Treatment_model = height_model %>% 
+              unnest(tidy1),
+            Null_model = height_model %>% 
+              unnest(tidy2),
+            .id = "Model") %>% 
+    select(Model, Site, AIC) %>% 
+    pivot_wider(names_from = "Model", values_from = "AIC") %>% 
+    mutate(Model_Diff = Treatment_model - Null_model)
+  
+  return(height_model_result)
+  
+}
 

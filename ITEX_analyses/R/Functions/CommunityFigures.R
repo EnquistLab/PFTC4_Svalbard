@@ -154,3 +154,20 @@ make_ordination <- function(NMDS_data){
   return(CommunityOrdination)
   
 }
+
+
+
+make_height_figure <- function(height){
+  
+  canopy_height_figure <- ggplot(height, aes(x = Site, y = Value, fill = Treatment)) +
+    geom_boxplot() +
+    scale_fill_manual(values = c("grey", "red")) +
+    labs(y = "Canopy height cm", x = "Habitat Type") +
+    annotate("text", x = 2, y = 30, label = "T *") +
+    annotate("text", x = 3, y = 30, label = "T *") +
+    theme_classic() +
+    theme(text = element_text(size = 20))
+  
+  return(canopy_height_figure)
+
+}

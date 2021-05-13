@@ -56,8 +56,11 @@ Community = read_csv(file = "community/cleaned_data/PFTC4_Svalbard_2003_2015_ITE
   
   
   # import height data
-  veg_structure_raw = read_csv(file = "community/cleaned_data/PFTC4_Svalbard_2003_2015_ITEX_Vegetation_Structure.csv"),
-  
+  Height = read_csv(file = "community/cleaned_data/PFTC4_Svalbard_2003_2015_ITEX_Vegetation_Structure.csv") %>% 
+  filter(Variable == "MedianHeight_cm",
+         Year == 2015) %>% 
+  mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))),
+
   
   # flux data #
   ITEX.data.raw = read_csv("fluxes/cleaned_data/Cflux_SV_ITEX_2018.csv"),
@@ -71,7 +74,7 @@ Community = read_csv(file = "community/cleaned_data/PFTC4_Svalbard_2003_2015_ITE
   
   # import temperature and climate data
   # weather station data
-  ItexSvalbard_Temp_2005_2015 = read_csv(file = "climate/data_clean/PFTC4_Svalbard_2005_2018_ITEX_Temperature.csv"),
-  WeatherStation = read_csv(file = "climate/data_clean/PFTC4_Svalbard_2015_2018_ITEX_Climate.csv"),
+  Temperature = read_csv(file = "climate/data_clean/PFTC4_Svalbard_2005_2018_ITEX_Temperature.csv"),
+  Climate = read_csv(file = "climate/data_clean/PFTC4_Svalbard_2015_2018_ITEX_Climate.csv"),
   
 )
