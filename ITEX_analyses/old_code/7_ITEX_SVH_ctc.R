@@ -1,6 +1,6 @@
 #### FLUX DATA ANALYSIS ####
-source("ITEX_analyses/2_Import_data.R")
 
+ITEX.data.raw = read_csv("fluxes/cleaned_data/Cflux_SV_ITEX_2018.csv")
 ## process data
 ITEX.data.pre.calcs <- ITEX.data.raw %>%
   mutate(
@@ -33,6 +33,11 @@ ITEX.data.pre.calcs <- ITEX.data.raw %>%
     Notes = comment
   )
 
+#Data with plant community, traits and fluxes. Do not use flux data, but plant data are updated and ready to use
+load(file = "fluxes/cleaned_data/ITEX_all.Rdata", verbose = TRUE)
+
+#### Load traitdata ######
+load("fluxes/cleaned_data/ITEX_trait_means.Rdata", verbose = TRUE)
 
 # separate dfs for Dark and Light measurements  
 ITEX_ER<-subset(ITEX.data.pre.calcs, Type== "D")        #& LNrsqd>=.8)
@@ -406,26 +411,27 @@ ggplot(z2, aes(x =Trait, y = estimate, shape=response, col= ITV, ymin = lower, y
 
 
 #### MuMin Model selection + VIF ####
-library(MASS)
+#library(MASS)
 library(MuMIn)
 
 # GPP700 models:
 # Environment
 GPP.env<-summary(lm(GPP700 ~ CanTemp_Light, data = ITEX.mean.fluxes))
+step <- MASS::stepAIC(lm(GPP700 ~ CanTemp_Light, data = ITEX.mean.fluxes), direction="backward")
 
 # community
 GPP_com<- lm(GPP700 ~ Richness + Evenness + Diversity + Height_cm + gram + forb + bryo + eshrub + dshrub+ lichen, data = ITEX.mean.fluxes)
-step <- stepAIC(GPP_com, direction="backward")
-GPP.com<-summary(lm(GPP700 ~ Richness + Height_cm, data = ITEX.mean.fluxes))
+step <- MASS::stepAIC(GPP_com, direction="backward") 
+GPP.com<-summary(lm(GPP700 ~ Richness + Height_cm, data = ITEX.mean.fluxes)) # forb, rich, height
 
 # Traits
 GPP_traitCWM<- lm(GPP700 ~ CWM_N + CWM_CN + CWM_P + CWM_SLA + CWM_LDMC + CWM_LT + CWM_LA + CWM_Height, data = ITEX.mean.fluxes)
-step <- stepAIC(GPP_traitCWM, direction="backward")
+step <- MASS::stepAIC(GPP_traitCWM, direction="backward")
 GPP.CWM<-summary(lm(GPP700 ~  CWM_CN , data = ITEX.mean.fluxes)) 
 
 # Traits No ITV, same predictors as with CWM to compare influence of ITV
 GPP_traitNoITV<- lm(GPP700 ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LDMC + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes)
-step <- stepAIC(GPP_traitNoITV, direction="backward")
+step <- MASS::stepAIC(GPP_traitNoITV, direction="backward")
 GPP.noitv<-summary(lm(GPP700 ~  noitv_CN , data = ITEX.mean.fluxes)) 
 
 # combination
@@ -441,20 +447,21 @@ GPP.env.com.noitv<-summary(lm(GPP700 ~ CanTemp_Light +Richness + Height_cm + noi
 # Reco models:
 # Environment
 R.env<-summary(lm(ER_ln ~  CanTemp_Light, data = ITEX.mean.fluxes))
+step <- MASS::stepAIC(lm(ER_ln ~  CanTemp_Light, data = ITEX.mean.fluxes), direction="backward")
 
 # community
 R_com<- lm(ER_ln ~ Richness + Evenness + Diversity + Height_cm + gram + forb + bryo + eshrub + dshrub+ lichen, data = ITEX.mean.fluxes)
-step <- stepAIC(R_com, direction="backward")
+step <- MASS::stepAIC(R_com, direction="backward")
 R.com<-summary( lm(ER_ln ~ Richness + Diversity + bryo , data = ITEX.mean.fluxes))
 
 # traits 
 R_traitCWM<- lm(ER_ln ~ CWM_N + CWM_CN + CWM_P + CWM_SLA + CWM_LDMC + CWM_LT + CWM_LA + CWM_Height, data = ITEX.mean.fluxes)
-step <- stepAIC(R_traitCWM, direction="backward")
+step <- MASS::stepAIC(R_traitCWM, direction="backward") # Height, LA (CN is -1.96)
 R.CWM<-summary(lm(ER_ln ~  CWM_CN + CWM_Height +CWM_LA, data = ITEX.mean.fluxes)) 
 
 # Traits No ITV, same predictors as with CWM to compare influence of ITV
 R_traitNoITV<- lm(ER_ln ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LDMC + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes)
-step <- stepAIC(R_traitNoITV, direction="backward")
+step <- MASS::stepAIC(R_traitNoITV, direction="backward") # LA, P, N, not CN not Height
 R.noitv<-summary(lm(ER_ln ~  noitv_CN + noitv_Height + noitv_LA , data = ITEX.mean.fluxes))
 
 R.env.com<-summary(lm(ER_ln ~  CanTemp_Light+ Richness + Diversity + bryo, data = ITEX.mean.fluxes)) 
@@ -468,22 +475,25 @@ R.env.com.noitv<-summary(lm(ER_ln ~  CanTemp_Light+ Richness + Diversity + bryo+
 
 # NEE models:
 # Environment
-NEE.env<-summary(lm(NEE_ln ~  SoilTemp, data = ITEX.mean.fluxes))
+NEE.env<-lm(NEE_ln ~  SoilTemp, data = ITEX.mean.fluxes)
 AICc(lm(NEE_ln ~  SoilTemp, data = ITEX.mean.fluxes))
-step <- stepAIC(NEE.env, direction="backward")
+step <- MASS::stepAIC(NEE.env, direction="backward")
+NEE.env<-summary(lm(NEE_ln ~  SoilTemp, data = ITEX.mean.fluxes))
 
 # community
 NEE_com<- lm(NEE_ln ~ Richness + Evenness + Diversity + Height_cm + gram + forb + bryo + eshrub + dshrub+ lichen, data = ITEX.mean.fluxes)
-step <- stepAIC(NEE_com, direction="backward")
+step <- MASS::stepAIC(NEE_com, direction="backward") # Height is only 1.745
 NEE.com<-summary( lm(NEE_ln ~ Height_cm + Evenness, data = ITEX.mean.fluxes))
 
 # traits 
 NEE_traitCWM<- lm(NEE_ln ~ CWM_N + CWM_CN + CWM_P + CWM_SLA + CWM_LDMC + CWM_LT + CWM_LA + CWM_Height, data = ITEX.mean.fluxes)
-step <- stepAIC(NEE_traitCWM, direction="backward")
+step <- MASS::stepAIC(NEE_traitCWM, direction="backward")
 NEE.CWM<-summary(lm(NEE_ln ~  CWM_Height +CWM_LA, data = ITEX.mean.fluxes)) # N has biggest effect as single predictor
 
+
 # Traits No ITV, same predictors as with CWM to compare influence of ITV
-NEE_traitNoITV<- lm(NEE_ln ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LDMC + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes)
+NEE_traitNoITV<- lm(NEE_ln ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LDMC + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes, na.action = na.fail)
+step <- MASS::stepAIC(NEE_traitNoITV, direction="backward") # SLA, Height, CN, N, P, LA
 NEE.noitv<-summary(lm(NEE_ln ~ noitv_Height + noitv_LA , data = ITEX.mean.fluxes)) # N has biggest effect as single predictor
 
 NEE.env.com<-summary(lm(NEE_ln ~  SoilTemp+ Height_cm + Evenness, data = ITEX.mean.fluxes))
@@ -558,8 +568,8 @@ VarianceDecomp2<-VarianceDecomp2%>%
 VarianceDecomp2$Variables<- factor(VarianceDecomp2$Variables, levels = c("unique.Trait", "unique.Com", "unique.Env", "combined.Com.Trait", "combined.Env.Trait", "combined.Env.Com", "combined.Env.Com.Trait"))
 VarianceDecomp2$Cflux<- factor(VarianceDecomp2$Cflux, levels = c("GPP", "Reco", "NEE"))
 
-brewer.pal(n = 8, name = "Set2")
 library(RColorBrewer)
+brewer.pal(n = 8, name = "Set2")
 p2<-ggplot(VarianceDecomp, aes(Cflux, value*100, fill=Variables))+
   geom_bar(position="stack", stat="identity")+
   geom_hline(yintercept=0)+
