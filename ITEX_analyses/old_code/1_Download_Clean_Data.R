@@ -24,3 +24,7 @@ download_PFTC_data(country = "Svalbard",
                    datatype = "community", 
                    path = "community/cleaned_data/")
 
+# C-fluxes
+download_PFTC_data(country = "Svalbard", 
+                   datatype = "C-fluxes", 
+                   path = "fluxes/cleaned_data/")

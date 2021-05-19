@@ -270,10 +270,10 @@ fNMDS <- fortify(NMDS_DH) %>%
   bind_rows(fNMDS_SB, fNMDS_CH)
 
 # Make figure
-  
- 
+
+
 plot_annotation <- tibble(Site = c("SB", "CH", "DH"),
-                   label = c("Year*", "", "Year*"))
+                          label = c("Year*", "", "Year*"))
 CommunityOrdination <- fNMDS %>% 
   mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>% 
   ggplot(aes(x = NMDS1, y = NMDS2)) +
