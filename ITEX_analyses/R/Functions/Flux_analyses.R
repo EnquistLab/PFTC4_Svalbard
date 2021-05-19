@@ -243,13 +243,13 @@ trait_model_selelction <- function(ITEX.Trait_Fluxes){
     )
   
   GPP.CWM <- summary(lm(GPP700 ~  CWM_N , data = ITEX.mean.fluxes))
-  GPP.noitv <- summary(lm(GPP700 ~  noitv_N + noitv_SLA + noitv_LT, data = ITEX.mean.fluxes))
+  GPP.noitv <- summary(lm(GPP700 ~  noitv_N, data = ITEX.mean.fluxes))
   
   R.CWM <- summary(lm(ER_ln ~  CWM_N + CWM_Height + CWM_LA, data = ITEX.mean.fluxes))
-  R.noitv <- summary(lm(ER_ln ~  noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes))
+  R.noitv <- summary(lm(ER_ln ~  noitv_N + noitv_Height + noitv_LA, data = ITEX.mean.fluxes))
   
   NEE.CWM <- summary(lm(NEE_ln ~  CWM_Height + CWM_LA, data = ITEX.mean.fluxes))
-  NEE.noitv <- summary(lm(NEE_ln ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_Height, data = ITEX.mean.fluxes))
+  NEE.noitv <- summary(lm(NEE_ln ~ noitv_Height + noitv_LA, data = ITEX.mean.fluxes))
   
   # ITV vs no ITV
   CWM_ITV <- tibble(Cflux = c("GPP", "Reco", "NEE"),
@@ -313,7 +313,7 @@ model_selection <- function(ITEX.Trait_Fluxes){
   # Traits No ITV, same predictors as with CWM to compare influence of ITV
   GPP_traitNoITV <- lm(GPP700 ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LDMC + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes)
   step <- MASS::stepAIC(GPP_traitNoITV, direction = "backward")
-  GPP.noitv <- summary(lm(GPP700 ~  noitv_N + noitv_SLA + noitv_LT, data = ITEX.mean.fluxes)) # N, SLA, LT (CN before)
+  GPP.noitv <- summary(lm(GPP700 ~  noitv_N, data = ITEX.mean.fluxes)) # N, SLA, LT (CN before)
   
   # combination
   GPP.env.com <- summary(lm(GPP700 ~ Richness + Height_cm + CanTemp_Light, data = ITEX.mean.fluxes)) 
@@ -321,9 +321,9 @@ model_selection <- function(ITEX.Trait_Fluxes){
   GPP.com.CWM <- summary(lm(GPP700 ~ Richness + Height_cm + CWM_N, data = ITEX.mean.fluxes)) 
   GPP.env.com.CWM <- summary(lm(GPP700 ~ CanTemp_Light + Richness + Height_cm + CWM_N, data = ITEX.mean.fluxes)) 
   
-  GPP.env.noitv <- summary(lm(GPP700 ~ CanTemp_Light + noitv_N + noitv_SLA + noitv_LT, data = ITEX.mean.fluxes))
-  GPP.com.noitv <- summary(lm(GPP700 ~ Richness + Height_cm + noitv_N + noitv_SLA + noitv_LT, data = ITEX.mean.fluxes))
-  GPP.env.com.noitv <- summary(lm(GPP700 ~ CanTemp_Light +Richness + Height_cm + noitv_N + noitv_SLA + noitv_LT, data = ITEX.mean.fluxes)) 
+  GPP.env.noitv <- summary(lm(GPP700 ~ CanTemp_Light + noitv_N, data = ITEX.mean.fluxes))
+  GPP.com.noitv <- summary(lm(GPP700 ~ Richness + Height_cm + noitv_N, data = ITEX.mean.fluxes))
+  GPP.env.com.noitv <- summary(lm(GPP700 ~ CanTemp_Light + Richness + Height_cm + noitv_N, data = ITEX.mean.fluxes)) 
   
   
   #### Reco models ####
@@ -345,16 +345,16 @@ model_selection <- function(ITEX.Trait_Fluxes){
   # Traits No ITV, same predictors as with CWM to compare influence of ITV
   R_NoITV <- lm(ER_ln ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LDMC + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes)
   step <- MASS::stepAIC(R_NoITV, direction = "backward")
-  R.noitv <- summary(lm(ER_ln ~  noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes)) # (CN, Height and LA before)
+  R.noitv <- summary(lm(ER_ln ~  noitv_N + noitv_Height + noitv_LA, data = ITEX.mean.fluxes)) # (CN, Height and LA before)
   
   R.env.com <- summary(lm(ER_ln ~  CanTemp_Light + Richness + Diversity + bryo, data = ITEX.mean.fluxes)) 
   R.env.CWM <- summary(lm(ER_ln ~  CanTemp_Light + CWM_N + CWM_Height + CWM_LA, data = ITEX.mean.fluxes))
   R.com.CWM <- summary(lm(ER_ln ~  Richness + Diversity + bryo + CWM_N + CWM_Height + CWM_LA, data = ITEX.mean.fluxes))
   R.env.com.CWM <- summary(lm(ER_ln ~  CanTemp_Light + Richness + Diversity + bryo + CWM_N + CWM_Height + CWM_LA, data = ITEX.mean.fluxes))
   
-  R.env.noitv <- summary(lm(ER_ln ~  CanTemp_Light + noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes))
-  R.com.noitv <- summary(lm(ER_ln ~  Richness + Diversity + bryo + noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes)) 
-  R.env.com.noitv <- summary(lm(ER_ln ~  CanTemp_Light+ Richness + Diversity + bryo + noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes))
+  R.env.noitv <- summary(lm(ER_ln ~  CanTemp_Light + noitv_N + noitv_Height + noitv_LA, data = ITEX.mean.fluxes))
+  R.com.noitv <- summary(lm(ER_ln ~  Richness + Diversity + bryo + noitv_N + noitv_Height + noitv_LA, data = ITEX.mean.fluxes)) 
+  R.env.com.noitv <- summary(lm(ER_ln ~  CanTemp_Light+ Richness + Diversity + bryo + noitv_N + noitv_Height + noitv_LA, data = ITEX.mean.fluxes))
   
   #### NEE models ####
   # Environment
@@ -375,17 +375,17 @@ model_selection <- function(ITEX.Trait_Fluxes){
   # Traits No ITV, same predictors as with CWM to compare influence of ITV
   NEE_traitNoITV <- lm(NEE_ln ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LDMC + noitv_LT + noitv_LA + noitv_Height, data = ITEX.mean.fluxes)
   step <- MASS::stepAIC(NEE_traitNoITV, direction = "backward")
-  NEE.noitv <- summary(lm(NEE_ln ~ noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_Height, data = ITEX.mean.fluxes)) # N has biggest effect as single predictor
+  NEE.noitv <- summary(lm(NEE_ln ~ noitv_Height + noitv_LA, data = ITEX.mean.fluxes)) # N has biggest effect as single predictor
   # (Height and LA before)
   
   NEE.env.com <- summary(lm(NEE_ln ~  SoilTemp + Evenness, data = ITEX.mean.fluxes))
-  NEE.env.CWM <- summary(lm(NEE_ln ~  SoilTemp + CWM_Height +CWM_LA, data = ITEX.mean.fluxes))
+  NEE.env.CWM <- summary(lm(NEE_ln ~  SoilTemp + CWM_Height + CWM_LA, data = ITEX.mean.fluxes))
   NEE.com.CWM <- summary(lm(NEE_ln ~  Evenness + CWM_Height + CWM_LA, data = ITEX.mean.fluxes))
   NEE.env.com.CWM <- summary(lm(NEE_ln ~  SoilTemp + Evenness + CWM_Height + CWM_LA, data = ITEX.mean.fluxes))
   
-  NEE.env.noitv <- summary(lm(NEE_ln ~  SoilTemp + noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_Height, data = ITEX.mean.fluxes))
-  NEE.com.noitv <- summary(lm(NEE_ln ~  Evenness + noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_Height, data = ITEX.mean.fluxes))
-  NEE.env.com.noitv <- summary(lm(NEE_ln ~  SoilTemp + Evenness + noitv_N + noitv_CN + noitv_P + noitv_SLA + noitv_LT + noitv_Height, data = ITEX.mean.fluxes))
+  NEE.env.noitv <- summary(lm(NEE_ln ~  SoilTemp + noitv_Height + noitv_LA, data = ITEX.mean.fluxes))
+  NEE.com.noitv <- summary(lm(NEE_ln ~  Evenness + noitv_Height + noitv_LA, data = ITEX.mean.fluxes))
+  NEE.env.com.noitv <- summary(lm(NEE_ln ~  SoilTemp + Evenness + noitv_Height + noitv_LA, data = ITEX.mean.fluxes))
   
   
   # Variance Decomposition
@@ -448,4 +448,142 @@ model_selection <- function(ITEX.Trait_Fluxes){
 
 
 
+
+
+model_selection_results <- function(ITEX.Trait_Fluxes){
+  
+  # prep data
+  ITEX.mean.fluxes <- ITEX.Trait_Fluxes %>% 
+    rename(CWM_C = ITV_C,
+           CWM_CN = ITV_CN, 
+           CWM_LDMC = ITV_LDMC,
+           CWM_LA = ITV_LA,
+           CWM_LT = ITV_LT,
+           CWM_N = ITV_N,
+           CWM_P = ITV_P,
+           CWM_Height = ITV_Height,
+           CWM_SLA = ITV_SLA,
+           
+           noitv_C = No_ITV_C,
+           noitv_CN = No_ITV_CN, 
+           noitv_LDMC = No_ITV_LDMC,
+           noitv_LA = No_ITV_LA,
+           noitv_LT = No_ITV_LT,
+           noitv_N = No_ITV_N,
+           noitv_P = No_ITV_P,
+           noitv_Height = No_ITV_Height,
+           noitv_SLA = No_ITV_SLA,
+           
+           gram = Graminoid,
+           forb = Forb,
+           bryo = Bryophyte,
+           eshrub = Evergreen,
+           dshrub = Decidious,
+           lichen = Lichen
+    )
+  
+  
+  #### GPP700 models ####
+  # Environment
+  GPP.env <- (lm(GPP700 ~ CanTemp_Light, data = ITEX.mean.fluxes))
+  
+  # Community
+  GPP.com <- (lm(GPP700 ~ Richness + Height_cm, data = ITEX.mean.fluxes))
+  
+  # Traits
+  GPP.CWM <- (lm(GPP700 ~  CWM_N , data = ITEX.mean.fluxes)) # N (CN before)
+  
+  # Traits No ITV, same predictors as with CWM to compare influence of ITV
+  GPP.noitv <- (lm(GPP700 ~  noitv_N, data = ITEX.mean.fluxes))
+  
+  
+  #### Reco models ####
+  # Environment
+  R.env <- summary(lm(ER_ln ~  CanTemp_Light, data = ITEX.mean.fluxes))
+  
+  # Community
+  R.com <- summary(lm(ER_ln ~ Richness + Diversity + bryo , data = ITEX.mean.fluxes))
+  
+  # Traits 
+  R.CWM <- summary(lm(ER_ln ~  CWM_N + CWM_Height + CWM_LA, data = ITEX.mean.fluxes)) # (CN instead of N before)
+  
+  # Traits No ITV, same predictors as with CWM to compare influence of ITV
+  R.noitv <- summary(lm(ER_ln ~  noitv_N + noitv_Height + noitv_LA, data = ITEX.mean.fluxes))
+  
+  #### NEE models ####
+  # Environment
+  NEE.env <- summary(lm(NEE_ln ~  SoilTemp, data = ITEX.mean.fluxes))
+  
+  # Community
+  NEE.com <- summary( lm(NEE_ln ~ Evenness, data = ITEX.mean.fluxes)) # (Height, Evenness before)
+  
+  # Traits 
+  NEE.CWM <- summary(lm(NEE_ln ~  CWM_Height + CWM_LA, data = ITEX.mean.fluxes)) # N has biggest effect as single predictor
+  
+  # Traits No ITV, same predictors as with CWM to compare influence of ITV
+  NEE.noitv <- summary(lm(NEE_ln ~ noitv_Height + noitv_LA, data = ITEX.mean.fluxes)) # N has biggest effect as single predictor
+  
+  
+  tidy_model <- bind_rows(GPP_env = tidy(GPP.env),
+            GPP_comm = tidy(GPP.com),
+            GPP_ITV = tidy(GPP.CWM),
+            GPP_NoITV = tidy(GPP.noitv),
+            
+            R_env = tidy(R.env),
+            R_comm = tidy(R.com),
+            R_ITV = tidy(R.CWM),
+            R_NoITV = tidy(R.noitv),
+            
+            NEE_env = tidy(NEE.env),
+            NEE_comm = tidy(NEE.com),
+            NEE_ITV = tidy(NEE.CWM),
+            NEE_NoITV = tidy(NEE.noitv),
+            .id = "Flux_Model")
+  
+  
+  glance_model <- bind_rows(GPP_env = glance(GPP.env),
+            GPP_comm = glance(GPP.com),
+            GPP_ITV = glance(GPP.CWM),
+            GPP_NoITV = glance(GPP.noitv),
+            
+            R_env = glance(R.env),
+            R_comm = glance(R.com),
+            R_ITV = glance(R.CWM),
+            R_NoITV = glance(R.noitv),
+            
+            NEE_env = glance(NEE.env),
+            NEE_comm = glance(NEE.com),
+            NEE_ITV = glance(NEE.CWM),
+            NEE_NoITV = glance(NEE.noitv),
+            .id = "Flux_Model")
+  
+  results_model_selection <- tidy_model %>% 
+    left_join(glance_model, by = "Flux_Model", suffix = c(".tidy", ".glance")) %>% 
+    separate(col = Flux_Model, into = c("Flux", "Model"), sep = "_") %>% 
+    mutate(term = case_when(term == "(Intercept)" ~ "Intercept",
+                            term == "CanTemp_Light" ~ "Canopy temperature",
+                            term == "Height_cm" ~ "Canopy height",
+                            term == "SoilTemp" ~ "Soil temperature",
+                            term %in% c("CWM_N", "noitv_N") ~ "N",
+                            term %in% c("CWM_Height", "noitv_Height") ~ "Plant height",
+                            term %in% c("CWM_LA", "noitv_LA") ~ "Leaf area",
+                            TRUE ~ term),
+           Model = case_when(Model == "env" ~ "Environment",
+                             Model == "comm" ~ "Community taxonomic structure",
+                             Model == "ITV" ~ "ITV traits",
+                             Model == "NoITV" ~ "No ITV traits",
+                             TRUE ~ Model)) %>% 
+    select(Flux, Model, Variable = term, R2adj = adj.r.squared, df, estimate, SE = std.error, p = p.value.tidy) %>% 
+    mutate(R2adj = round(R2adj, 3),
+           estimate = round(estimate, 3),
+           SE = round(SE, 3),
+           p = round(p, 3),
+           p = case_when(p < 0.001 ~ paste("<0.001", "***"),
+                                 p < 0.01 ~ paste(p, "**"),
+                                 p < 0.05 ~ paste(p, "*"),
+                                 p >= 0.05 ~ paste(p, ""))) %>% 
+    rename("P value" = p)
+  
+  return(results_model_selection)
+}
 

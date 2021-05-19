@@ -74,6 +74,7 @@ make_flux_mean_figures <- function(ITEX.mean.fluxes){
 ###### USING NOT STANDARDIZED FLUXES!!!!!! #########
 # Effect of single predictors on NEE. GPP and Reco
 #### Effect size plots ####
+#ITEX.Trait_Fluxes <- Flux_and_Traits
 
 make_effect_size_figure <- function(ITEX.Trait_Fluxes){
   
@@ -88,29 +89,35 @@ make_effect_size_figure <- function(ITEX.Trait_Fluxes){
     do(tidy(lm(C_flux ~ value, data = .))) %>%
     filter(!term == "(Intercept)") %>% 
     mutate(lower = (estimate - std.error * 1.96),
-           upper = (estimate + std.error * 1.96))
+           upper = (estimate + std.error * 1.96),
+           overlapp_zero = if_else(p.value < 0.05, "signi", "non-signi"),
+           response = factor(response, levels = c("GPP", "Reco", "NEE")))
   
   
-  effect_size_figure <- ggplot(Flux_analyses, aes(x = prediction, y = estimate, shape = response, 
-                                                  fill = response, ymin = lower, ymax = upper)) +
+  effect_size_figure <- ggplot(Flux_analyses, aes(x = prediction, y = estimate, 
+                                                  shape = response, 
+                                                  fill = prediction, 
+                                                  alpha = p.value < 0.05,
+                                                  ymin = lower, ymax = upper)) +
     geom_errorbar(width = 0, position = position_dodge(width = 0.5)) +
-    geom_hline(yintercept = 0, linetype = "solid", color="grey") +
+    geom_hline(yintercept = 0, linetype = "solid", color = "grey") +
     geom_point(position = position_dodge(width = 0.5), size = 3) +
-    scale_shape_manual(limits = c("NEE", "GPP", "Reco"), labels = c("NEE", "GPP", "Reco"), values = c(22, 24,21)) +
-    scale_fill_manual(limits = c("NEE", "GPP", "Reco"), labels = c("NEE", "GPP", "Reco"), values = c("red", "grey70", "black")) +
-    scale_x_discrete(limits = c("No_ITV_CN", "No_ITV_N", "No_ITV_C", "No_ITV_P", "No_ITV_SLA", "No_ITV_LDMC", "No_ITV_LT", "No_ITV_LA", "No_ITV_Height", "ITV_CN", "ITV_N", "ITV_C", "ITV_P", "ITV_SLA", "ITV_LDMC", "ITV_LT", "ITV_LA", "ITV_Height", "Richness", "Evenness", "Diversity", "Height_cm", "Graminoid", "Forb", "Bryophyte", "Evergreen", "Decidious", "Lichen", "CanTemp_Light","SoilTemp", "SoilMoist"), labels = c("No ITV CN", "No ITV N", "No ITV C", "No ITV P", "No ITV SLA", "No ITV LDMC", "No ITV LT", "No ITV LA", "No ITV Height", "ITV CN", "ITV N", "ITV C", "ITV P", "ITV SLA", "ITV LDMC", "ITV LT", "ITV LA", "ITV Height", "Richness", "Evenness", "Diversity", "Plant Height", "Graminoid", "Forb", "Bryophyte", "Evergreen", "Decidious", "Lichen", "CanTemp Light","SoilTemp", "SoilMoist")) +
+    scale_shape_manual(labels = c("NEE", "GPP", "Reco"), values = c(22, 24,21)) +
+    scale_fill_manual(values = c(rep("#F0E442", 18), rep("#0072B2", 10), rep("grey90", 3))) +
+    scale_alpha_manual(values = c(0.5, 1)) +
+    scale_x_discrete(labels = c("No ITV CN", "No ITV N", "No ITV C", "No ITV P", "No ITV SLA", "No ITV LDMC", "No ITV LT", "No ITV LA", "No ITV Height", "ITV CN", "ITV N", "ITV C", "ITV P", "ITV SLA", "ITV LDMC", "ITV LT", "ITV LA", "ITV Height", "Richness", "Evenness", "Diversity", "Plant Height", "Graminoid", "Forb", "Bryophyte", "Evergreen", "Decidious", "Lichen", "CanTemp Light","SoilTemp", "SoilMoist")) +
+    labs(x = "", y = "Effect size") +
     facet_grid(~response) +
-    theme(axis.title.x=element_text(size = 12), 
-          axis.text.x=element_text(size = 12), 
-          axis.text.y = element_text(size = 12), 
-          axis.title.y=element_blank(), 
+    theme(axis.title.x = element_text(size = 14), 
+          axis.text = element_text(size = 13),
           strip.background = element_rect(colour="black", fill="white"), 
           panel.background = element_rect(fill= "white"), 
           panel.border = element_rect(colour = "black", fill=NA), 
           strip.text.x = element_text(size=12, face="bold"),  
           axis.line = element_line(colour = "black"), 
-          legend.position = "none" )+
+          legend.position = "none") +
     coord_flip()
+  #ggsave("effect_size_figure.jpg", effect_size_figure, height = 10, width = 13)
   
   return(effect_size_figure)
   
@@ -132,8 +139,8 @@ make_flux_figure <- function(trait_model_output, model_selection_output){
                       name = "Trait variation") +
     geom_hline(yintercept = 0, colour = "grey40") +
     labs(y = '', tag = "C") +
-    scale_y_continuous(limits = c(-10, 100), 
-                       breaks = seq(-10, 100, by = 10)) +
+    scale_y_continuous(limits = c(-10, 70), 
+                       breaks = seq(-10, 70, by = 10)) +
     theme_bw() +
     theme(panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
@@ -200,7 +207,7 @@ make_flux_figure <- function(trait_model_output, model_selection_output){
           axis.title = element_text(size = 14),
           legend.position = "none")
   
-  carbon_flux_figure <- p2 + p3
+  carbon_flux_figure <- p2 + p3 + p1
   
   #ggsave("carbon_flux_figure.jpg", carbon_flux_figure, height = 8, width = 15)
   

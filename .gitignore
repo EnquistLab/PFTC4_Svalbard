@@ -60,6 +60,7 @@ vignettes/*.pdf
 !ReproducibleCoding.html
 *.pdf
 *.jpeg
+*.jpg
 *.tif
 *.my.cnf
 *.dtf

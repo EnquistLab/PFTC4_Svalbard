@@ -12,11 +12,13 @@ FluxPlan <- drake_plan(
   Flux_and_Traits = flux_and_trait(Trait_Mean, Standard_Fluxes),
   
   # Effect size plot
-  Fig_X_Effect_size = make_effect_size_figure(Flux_and_Traits),
+  Fig_S9_Effect_size = make_effect_size_figure(Flux_and_Traits),
   
   # Model selection
   Trait_Model_Output = trait_model_selelction(Flux_and_Traits),
   Model_Output = model_selection(Flux_and_Traits),
+  
+  Results_Model_Selection = model_selection_results(Flux_and_Traits),
   
   # Flux Figure
   Fig_5_Fluxes = make_flux_figure(Trait_Model_Output, Model_Output)
