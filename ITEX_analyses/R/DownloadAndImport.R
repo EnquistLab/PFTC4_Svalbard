@@ -23,11 +23,16 @@ DataDownloadPlan <- drake_plan(
   # Community
   download_PFTC_data(country = "Svalbard",
                      datatype = "community",
-                     path = "community/cleaned_data/")#,
+                     path = "community/cleaned_data/"),
   
   # C-fluxes
-  # download_PFTC_data(country = "Svalbard", 
-  #                    datatype = "C-fluxes", 
+  get_file(node = "smbqh",
+           file = "Cflux_SV_ITEX_2018.csv",
+           path = "fluxes/cleaned_data/",
+           remote_path = "C-Flux")
+  # for some reason this does not work!!!
+  # download_PFTC_data(country = "Svalbard",
+  #                    datatype = "c-flux",
   #                    path = "fluxes/cleaned_data/")
 
 )

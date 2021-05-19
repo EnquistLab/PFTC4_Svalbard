@@ -5,8 +5,10 @@
 ### LOAD LIBRARIES
 # install.packages("remotes")
 #remotes::install_github("Plant-Functional-Trait-Course/PFTCFunctions")
+#remotes::install_github("Between-the-Fjords/dataDownloader")
 library(drake)
 library(PFTCFunctions)
+library(dataDownloader)
 library(tidyverse)
 library(lubridate)
 library(vegan)
