@@ -63,13 +63,39 @@ Community = read_csv(file = "community/cleaned_data/PFTC4_Svalbard_2003_2015_ITE
 
   
   # flux data #
-  ITEX.data.raw = read_csv("fluxes/cleaned_data/Cflux_SV_ITEX_2018.csv"),
+  Flux_Raw = read_csv("fluxes/cleaned_data/Cflux_SV_ITEX_2018.csv"),
   
-  #Data with plant community, traits and fluxes. Do not use flux data, but plant data are updated and ready to use
-  #load(file = "fluxes/cleaned_data/ITEX_all.Rdata"),
-  
-  #### Load traitdata ######
-  #load("ITEX_trait_means.Rdata", verbose = TRUE),
+  ## process data
+  ITEX.data.pre.calcs = Flux_Raw %>%
+  mutate(
+    #Gradient = "1",
+    #BlockID = NA,
+    Date = dmy(Date),     # changing Date from character to date format
+    #AirTemp = NA, # need iButton data!!
+    NEE = -1* NEE  ## proper terminology
+  ) %>%
+  select(
+    #Country,
+    #Year,
+    #Gradient,
+    #BlockID,
+    #Project,
+    #Site,           ## changing variable names
+    PlotID,
+    Treatment,
+    Date,
+    Time = StartTime,
+    Type = Cover,
+    LNrsqd = rsqd,
+    nee_lm = NEE,
+    SoilTemp = ST_mean,
+    SoilMoist = SM_mean,
+    CanTemp = IR_mean,
+    #AirTemp,
+    PAR = PAR_mean#,
+    #Weather,
+    #Notes = comment
+    ),
   
   
   # import temperature and climate data

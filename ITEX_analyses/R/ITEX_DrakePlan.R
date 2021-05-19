@@ -21,6 +21,8 @@ library(traitstrap)
 library(nlme)
 library(ape)
 library(broom.mixed)
+library(ggpattern)
+library(MuMIn)
 
 # tricks
 pn <- . %>% print(n = Inf)
@@ -36,6 +38,7 @@ theme_set(theme_bw(base_size = 15))
 source("ITEX_analyses/R/DownloadAndImport.R")
 source("ITEX_analyses/R/AnalysisPlan.R")
 source("ITEX_analyses/R/Figure_Plan.R")
+source("ITEX_analyses/R/FluxPlan.R")
 
 # Functions
 source("ITEX_analyses/R/Functions/Community_analyses.R")
@@ -44,6 +47,8 @@ source("ITEX_analyses/R/Functions/Trait_analyses.R")
 source("ITEX_analyses/R/Functions/TraitFigures.R")
 source("ITEX_analyses/R/Functions/inter_intra_anova.R")
 source("ITEX_analyses/R/Functions/Climate_analyses.R")
+source("ITEX_analyses/R/Functions/Flux_analyses.R")
+source("ITEX_analyses/R/Functions/Flux_figures.R")
 
 ### MAKE DRAKE PLAN
 
@@ -63,7 +68,8 @@ source("ITEX_analyses/R/Functions/Climate_analyses.R")
 MasterDrakePlan <-  bind_rows(DataDownloadPlan,
                               DataImportPlan,
                               AnalysisPlan,
-                              FigurePlan)
+                              FigurePlan,
+                              FluxPlan)
 
 #configure and make drake plan
 config <- drake::drake_config(MasterDrakePlan)
