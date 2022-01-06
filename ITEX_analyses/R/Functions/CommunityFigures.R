@@ -7,7 +7,7 @@ community_metrics_figure <- function(anova_t, metric_plot_dist, t_test){
     ungroup() %>% 
     filter(response != "Diversity") %>%
     mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
-    filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>%
+    #filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>%
     mutate(term = plyr::mapvalues(term, from = c("Treatment", "Site", "Treatment:Site"), to = c("T", "H", "TxH"))) %>%
     filter(term != "Residuals") %>%
     mutate(test = paste(term, ifelse(p.value < 0.05, "*", ifelse(p.value<0.1 & p.value > 0.05, "+", "")), sep = " ")) %>%
@@ -23,7 +23,7 @@ community_metrics_figure <- function(anova_t, metric_plot_dist, t_test){
     mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
     mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
     group_by(response) %>%
-    filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>%
+    #filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>%
     mutate(y_max = max(dist), y_min = min(dist)) %>%
     mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>%
     #filter(Year != 2003) %>%
@@ -112,10 +112,11 @@ metric_time_figure <- function(comm_resp){
     group_by(metric) %>% mutate(max_val = max(value)) %>% ungroup() %>%
     mutate(metric = factor(metric, levels = c("Richness", "Evenness", "Forb\nAbundance", "Graminoid\nAbundance", "Shrub\nAbundance", "Bryo\nAbundance", "Lichen\nAbundance"))) %>%
     mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>%
-    ggplot(aes(x = as.factor(Year), y = value, fill = Treatment)) +
-    geom_boxplot() +
+    ggplot(aes(x = as.factor(Year), y = value, color = Treatment, group = PlotID)) +
+    geom_point() +
+    geom_line() +
     facet_grid(metric ~ Site, scales = "free", switch = "both") +
-    scale_fill_manual(values = c("darkgray", "red")) +
+    scale_color_manual(values = c("gray45", "red")) +
     ylab("Community Metric") +
     xlab("Habitat Type") +
     theme_classic() +
