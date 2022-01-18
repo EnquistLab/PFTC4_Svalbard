@@ -6,7 +6,7 @@ community_metrics_figure <- function(anova_t, metric_plot_dist, t_test){
   anova_text <- anova_t %>% 
     ungroup() %>% 
     filter(response != "Diversity") %>%
-    mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+    mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totaleShrub", "totaldShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance"))) %>%
     #filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>%
     mutate(term = plyr::mapvalues(term, from = c("Treatment", "Site", "Treatment:Site"), to = c("T", "H", "TxH"))) %>%
     filter(term != "Residuals") %>%
@@ -16,12 +16,12 @@ community_metrics_figure <- function(anova_t, metric_plot_dist, t_test){
     mutate(T = ifelse(is.na(T), "", T)) %>%
     mutate(H = ifelse(is.na(H), "", H)) %>%
     mutate(text = trimws(ifelse(!is.na(TxH), TxH, paste(T, H)))) %>%
-    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
   
   metric_change <- metric_plot_dist %>% 
     filter(response != "Diversity") %>%
-    mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
-    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
+    mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totaleShrub", "totaldShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance"))) %>%
+    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
     group_by(response) %>%
     #filter(response != "Forb Abundance", response != "Bryophyte Abundance", response != "Lichen Abundance") %>%
     mutate(y_max = max(dist), y_min = min(dist)) %>%
@@ -31,7 +31,7 @@ community_metrics_figure <- function(anova_t, metric_plot_dist, t_test){
     geom_hline(yintercept = 0) +
     geom_boxplot(aes(x = Site, y = dist, fill = Treatment)) +
     scale_fill_manual(values = c("darkgray", "red")) +
-    facet_wrap(~response, scales = "free") +
+    facet_wrap(~response, scales = "free", ncol = 2) +
     ylab("Change in Metric") +
     xlab("Habitat Type") +
     theme_classic() +
@@ -56,7 +56,7 @@ community_metrics_figure_supp <- function(anova_t, metric_plot_dist, t_test_supp
 anova_text_supp <- anova_t %>% 
   ungroup() %>% 
   filter(response != "Diversity") %>%
-  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totaleShrub", "totaldShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance"))) %>%
   filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>%
   mutate(term = plyr::mapvalues(term, from = c("Treatment", "Site", "Treatment:Site"), to = c("T", "H", "TxH"))) %>%
   filter(term != "Residuals") %>%
@@ -66,12 +66,12 @@ anova_text_supp <- anova_t %>%
   mutate(T = ifelse(is.na(T), "", T)) %>%
   mutate(H = ifelse(is.na(H), "", H)) %>%
   mutate(text = trimws(ifelse(!is.na(TxH), TxH, paste(T, H)))) %>%
-  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
 
 
 metric_change_supp <- metric_plot_dist %>% filter(response != "Diversity") %>%
-  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
-  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
+  mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totaleShrub", "totaldShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance"))) %>%
+  mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
   group_by(response) %>%
   filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>%
   mutate(y_max = max(dist), y_min = min(dist)) %>%
@@ -106,11 +106,11 @@ return(metric_change_supp)
 metric_time_figure <- function(comm_resp){
   
   metric_time <- comm_resp %>%
-    select(Year, Site, Treatment, Richness, Evenness, totalForb, totalShrub, totalGraminoid, propBryo, propLichen, PlotID) %>%
-    rename("Forb\nAbundance" = totalForb, "Shrub\nAbundance" = totalShrub, "Graminoid\nAbundance" = totalGraminoid, "Bryo\nAbundance" = propBryo, "Lichen\nAbundance" = propLichen) %>%
+    select(Year, Site, Treatment, Richness, Evenness, totalForb, totaleShrub, totaldShrub, totalGraminoid, propBryo, propLichen, PlotID) %>%
+    rename("Forb\nAbundance" = totalForb, "Ever. Shrub\nAbundance" = totaleShrub, "Decid. Shrub\nAbundance" = totaldShrub, "Graminoid\nAbundance" = totalGraminoid, "Bryo\nAbundance" = propBryo, "Lichen\nAbundance" = propLichen) %>%
     gather(key = metric, value = value, -Year, -Site, -Treatment, -PlotID) %>%
     group_by(metric) %>% mutate(max_val = max(value)) %>% ungroup() %>%
-    mutate(metric = factor(metric, levels = c("Richness", "Evenness", "Forb\nAbundance", "Graminoid\nAbundance", "Shrub\nAbundance", "Bryo\nAbundance", "Lichen\nAbundance"))) %>%
+    mutate(metric = factor(metric, levels = c("Richness", "Evenness", "Forb\nAbundance", "Graminoid\nAbundance", "Ever. Shrub\nAbundance", "Decid. Shrub\nAbundance", "Bryo\nAbundance", "Lichen\nAbundance"))) %>%
     mutate(Site = factor(Site, levels = c("SB", "CH", "DH"))) %>%
     ggplot(aes(x = as.factor(Year), y = value, color = Treatment, group = PlotID)) +
     geom_point() +

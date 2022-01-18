@@ -22,7 +22,9 @@ calc_comm_metrics <- function(comm){
               totalVascular = sum(Abundance[FunctionalGroup %in% c("graminoid", "forb", "eshrub", "dshrub")]),
               totalGraminoid = sum(Abundance[FunctionalGroup %in% c("graminoid")]),
               totalForb = sum(Abundance[FunctionalGroup %in% c("forb")]),
-              totalShrub = sum(Abundance[FunctionalGroup %in% c("eshrub", "dshrub")])
+              totalShrub = sum(Abundance[FunctionalGroup %in% c("eshrub", "dshrub")]),
+              totaleShrub = sum(Abundance[FunctionalGroup %in% c("eshrub")]),
+              totaldShrub = sum(Abundance[FunctionalGroup %in% c("dshrub")])
     )
   return(comm_resp)
 }
@@ -49,7 +51,7 @@ community_metric_change <- function(comm, meta, comm_resp){
     summarize(dist = diff(value))%>%
     #left_join(soil_moisture2003, by = "PlotID") %>%
     #left_join(soil_moisture2004, by = "PlotID") %>%
-    filter(response == "Richness" | response == "Diversity" | response == "Evenness" | response == "sumAbundance" | response == "totalGraminoid" | response == "totalForb" | response == "totalShrub" | response == "propLichen" | response == "propBryo")
+    filter(response == "Richness" | response == "Diversity" | response == "Evenness" | response == "sumAbundance" | response == "totalGraminoid" | response == "totalForb" | response == "totaldShrub" | response == "totaleShrub" | response == "propLichen" | response == "propBryo")
   
   comm_distances_merge <- comm_distances %>%
     rename("dist" = "out") %>%
@@ -63,8 +65,8 @@ community_metric_change <- function(comm, meta, comm_resp){
 
 community_t_test <- function(metric_plot_dist){
   t_test <- metric_plot_dist %>% filter(response != "Diversity") %>%
-    mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
-    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
+    mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totaleShrub", "totaldShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance"))) %>%
+    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
     dplyr::filter(response != "Forb Abundance") %>%
     filter(response != "Bryophyte Abundance") %>%
     filter(response != "Lichen Abundance") %>%
@@ -73,7 +75,7 @@ community_t_test <- function(metric_plot_dist){
     summarise(P = t.test(dist, mu = 0)$p.value,
               Sig = ifelse(P < 0.05, "*", ifelse(P<0.1 & P > 0.05, "+", "")),
               MaxWidth = max(dist))%>% ungroup() %>%
-    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
   
   return(t_test)
   
@@ -86,15 +88,15 @@ t_test_supp <- function(metric_plot_dist){
   
   t_test_supp <- metric_plot_dist %>% 
     filter(response != "Diversity") %>%
-    mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totalShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance"))) %>%
-    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
-    filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Shrub Abundance") %>%
+    mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totaleShrub", "totaldShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance"))) %>%
+    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
+    filter(response != "Bray Curtis Distance", response != "Evenness", response != "Richness", response != "Vascular Abundance", response != "Graminoid Abundance", response != "Evergreen Shrub Abundance", response != "Deciduous Shrub Abundance") %>%
     droplevels(.) %>%
     group_by(response, Site, Treatment) %>%
     summarise(P = t.test(dist, mu = 0)$p.value,
               Sig = ifelse(P < 0.05, "*", ifelse(P<0.1 & P > 0.05, "+", "")),
               MaxWidth = max(dist))%>% ungroup() %>%
-    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
+    mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance")))
   
   return(t_test_supp)
 }
