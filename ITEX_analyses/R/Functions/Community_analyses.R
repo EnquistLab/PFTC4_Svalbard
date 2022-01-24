@@ -67,9 +67,9 @@ community_t_test <- function(metric_plot_dist){
   t_test <- metric_plot_dist %>% filter(response != "Diversity") %>%
     mutate(response = plyr::mapvalues(response, from = c("propBryo", "propLichen", "sumAbundance", "totalForb", "totalGraminoid", "totaleShrub", "totaldShrub"), to = c("Bryophyte Abundance", "Lichen Abundance", "Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance"))) %>%
     mutate(response = factor(response, levels = c("Bray Curtis Distance", "Evenness", "Richness","Vascular Abundance", "Forb Abundance", "Graminoid Abundance", "Evergreen Shrub Abundance", "Deciduous Shrub Abundance", "Bryophyte Abundance", "Lichen Abundance"))) %>%
-    dplyr::filter(response != "Forb Abundance") %>%
-    filter(response != "Bryophyte Abundance") %>%
-    filter(response != "Lichen Abundance") %>%
+    #dplyr::filter(response != "Forb Abundance") %>%
+    #filter(response != "Bryophyte Abundance") %>%
+    #filter(response != "Lichen Abundance") %>%
     droplevels() %>%
     group_by(response, Site, Treatment) %>%
     summarise(P = t.test(dist, mu = 0)$p.value,
