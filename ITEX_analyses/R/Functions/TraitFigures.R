@@ -24,9 +24,10 @@ make_trait_pca_figure <- function(trait_pca_info, pca_res){
     theme_classic() +
     theme(legend.position = "top",
           text = element_text(size = 12)) +
-    scale_color_manual(values = c("blue", "forestgreen", "orange")) +
-    guides(colour = guide_legend(nrow = 2,byrow = TRUE),
-           shape = guide_legend(nrow = 2,byrow = TRUE))
+    scale_color_manual(name = "", 
+                       values = c("blue", "forestgreen", "orange"),
+                       labels = c("Snowbed", expression(italic("Cassiope")~" heath"), expression(italic("Dryas")~" heath"))) +
+    scale_shape_manual(name = "", values = c(16, 17))
   
   return(pca_plot)
 }
