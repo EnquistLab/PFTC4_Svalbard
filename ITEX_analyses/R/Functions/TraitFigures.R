@@ -5,7 +5,9 @@
 
 make_trait_pca_figure <- function(trait_pca_info, pca_res){
   
-  pca_points <- cbind(trait_pca_info, pca_res$x) %>% rename("Habitat" = "Site")
+  pca_points <- cbind(trait_pca_info, pca_res$x) %>% rename("Habitat" = "Site") %>% 
+    mutate(Habitat = recode(Habitat, "SB" = "Snowbed", "CH" = "Cassiope heath", "DH" = "Dryas heath"),
+           Treatment = recode(Treatment, "CTL" = "Control"))
   pca_arrows <- pca_res$rotation
   
   pca_plot <- autoplot(pca_res, data = pca_points, 
@@ -22,11 +24,14 @@ make_trait_pca_figure <- function(trait_pca_info, pca_res){
     theme_classic() +
     theme(legend.position = "top",
           text = element_text(size = 12)) +
-    scale_color_manual(values = c("blue", "forestgreen", "orange"))
+    scale_color_manual(values = c("blue", "forestgreen", "orange")) +
+    guides(colour = guide_legend(nrow = 2,byrow = TRUE),
+           shape = guide_legend(nrow = 2,byrow = TRUE))
   
   return(pca_plot)
 }
 
+ggsave(pca_plot, filename = "pca_plot.jpeg", dpi = 150, height = 6, width = 7)
 
 
 make_trait_mean_figure <- function(anova_trait_tidy, traitMean){
